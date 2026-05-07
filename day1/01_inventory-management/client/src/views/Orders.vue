@@ -27,9 +27,62 @@
         </div>
       </div>
 
+      <!-- Submitted restocking orders (from this session or backend) -->
+      <div v-if="submittedOrders.length > 0" class="card submitted-orders-card">
+        <div class="card-header">
+          <h3 class="card-title">Submitted Orders ({{ submittedOrders.length }})</h3>
+        </div>
+        <div class="table-container">
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th class="col-order-number">Order #</th>
+                <th class="col-customer">Type</th>
+                <th class="col-items">Items</th>
+                <th class="col-status">Status</th>
+                <th class="col-date">Order Date</th>
+                <th class="col-date">Expected Delivery</th>
+                <th class="col-date">Lead Time</th>
+                <th class="col-value">Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in submittedOrders" :key="'sub-' + order.id">
+                <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
+                <td class="col-customer">
+                  <span class="badge info">Restocking</span>
+                </td>
+                <td class="col-items">
+                  <details class="items-details">
+                    <summary class="items-summary">
+                      {{ order.items.length }} item{{ order.items.length !== 1 ? 's' : '' }}
+                    </summary>
+                    <div class="items-dropdown">
+                      <div v-for="(item, idx) in order.items" :key="idx" class="item-entry">
+                        <span class="item-name">{{ item.name }}</span>
+                        <span class="item-meta">Qty: {{ item.quantity }} @ ${{ item.unit_price }}</span>
+                      </div>
+                    </div>
+                  </details>
+                </td>
+                <td class="col-status">
+                  <span class="badge warning">Processing</span>
+                </td>
+                <td class="col-date">{{ formatDate(order.order_date) }}</td>
+                <td class="col-date">{{ formatDate(order.expected_delivery) }}</td>
+                <td class="col-date">
+                  <span class="lead-time-badge">{{ leadDays(order) }}d</span>
+                </td>
+                <td class="col-value"><strong>${{ order.total_value.toLocaleString() }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">{{ t('orders.allOrders') }} ({{ orders.length }})</h3>
+          <h3 class="card-title">{{ t('orders.allOrders') }} ({{ regularOrders.length }})</h3>
         </div>
         <div class="table-container">
           <table class="orders-table">
@@ -45,7 +98,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="order in orders" :key="order.id">
+              <tr v-for="order in regularOrders" :key="order.id">
                 <td class="col-order-number"><strong>{{ order.order_number }}</strong></td>
                 <td class="col-customer">{{ translateCustomerName(order.customer) }}</td>
                 <td class="col-items">
@@ -83,11 +136,13 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
+import { useRestockingOrders } from '../composables/useRestockingOrders'
 
 export default {
   name: 'Orders',
   setup() {
     const { t, currentCurrency, translateProductName, translateCustomerName } = useI18n()
+    const { restockingOrders } = useRestockingOrders()
 
     const currencySymbol = computed(() => {
       return currentCurrency.value === 'JPY' ? '¥' : '$'
@@ -95,6 +150,19 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const orders = ref([])
+
+    // Split backend orders into regular and restocking types
+    const regularOrders = computed(() =>
+      orders.value.filter(o => o.order_type !== 'restocking')
+    )
+
+    // Merge backend restocking orders with any new ones from this session
+    const submittedOrders = computed(() => {
+      const backendRestocking = orders.value.filter(o => o.order_type === 'restocking')
+      const sessionIds = new Set(backendRestocking.map(o => o.id))
+      const sessionOnly = restockingOrders.value.filter(o => !sessionIds.has(o.id))
+      return [...backendRestocking, ...sessionOnly]
+    })
 
     // Use shared filters
     const {
@@ -130,7 +198,7 @@ export default {
     })
 
     const getOrdersByStatus = (status) => {
-      return orders.value.filter(order => order.status === status)
+      return regularOrders.value.filter(order => order.status === status)
     }
 
     const getOrderStatusClass = (status) => {
@@ -153,6 +221,13 @@ export default {
       })
     }
 
+    const leadDays = (order) => {
+      const start = new Date(order.order_date)
+      const end = new Date(order.expected_delivery)
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return '?'
+      return Math.round((end - start) / (1000 * 60 * 60 * 24))
+    }
+
     onMounted(loadOrders)
 
     return {
@@ -160,9 +235,12 @@ export default {
       loading,
       error,
       orders,
+      regularOrders,
+      submittedOrders,
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
+      leadDays,
       currencySymbol,
       translateProductName,
       translateCustomerName
@@ -276,4 +354,33 @@ export default {
   font-size: 0.813rem;
   color: #64748b;
 }
+
+/* Submitted Orders section */
+.submitted-orders-card {
+  border-color: #bfdbfe;
+  background: #f8faff;
+}
+
+.lead-time-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 20px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge.info    { background: #dbeafe; color: #1e40af; }
+.badge.warning { background: #fef9c3; color: #854d0e; }
 </style>

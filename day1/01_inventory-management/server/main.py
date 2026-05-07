@@ -2,7 +2,24 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime, timedelta
 from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
+
+# Lead times in days per category
+CATEGORY_LEAD_TIMES = {
+    "Circuit Boards": 14,
+    "Sensors": 7,
+    "Controllers": 10,
+    "Power Supplies": 10,
+    "Actuators": 12,
+    "Components": 5,
+    "Widgets": 5,
+    "Bearings": 5,
+    "Gaskets": 5,
+    "Motors": 12,
+    "Filters": 5,
+    "Valves": 8,
+}
 
 app = FastAPI(title="Factory Inventory Management System")
 
@@ -80,6 +97,19 @@ class Order(BaseModel):
     actual_delivery: Optional[str] = None
     warehouse: Optional[str] = None
     category: Optional[str] = None
+    order_type: Optional[str] = None
+
+class RestockOrderItem(BaseModel):
+    sku: str
+    name: str
+    quantity: int
+    unit_price: float
+    category: str
+
+class CreateOrderRequest(BaseModel):
+    customer: str = "Factory Restocking"
+    warehouse: Optional[str] = None
+    items: List[RestockOrderItem]
 
 class DemandForecast(BaseModel):
     id: str
@@ -160,6 +190,43 @@ def get_order(order_id: str):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+@app.post("/api/orders", response_model=Order, status_code=201)
+def create_order(order_data: CreateOrderRequest):
+    """Create a restocking order"""
+    # Determine lead time from the slowest category in this order
+    lead_days = max(
+        (CATEGORY_LEAD_TIMES.get(item.category, 10) for item in order_data.items),
+        default=10,
+    )
+
+    now = datetime.utcnow()
+    expected = now + timedelta(days=lead_days)
+
+    new_id = str(max((int(o["id"]) for o in orders), default=0) + 1)
+    order_number = f"RST-{now.year}-{len(orders) + 1:04d}"
+
+    categories = list({item.category for item in order_data.items})
+    primary_category = categories[0] if len(categories) == 1 else "Mixed"
+
+    new_order = {
+        "id": new_id,
+        "order_number": order_number,
+        "customer": order_data.customer,
+        "items": [item.dict() for item in order_data.items],
+        "status": "Processing",
+        "order_date": now.isoformat(),
+        "expected_delivery": expected.isoformat(),
+        "total_value": round(sum(i.quantity * i.unit_price for i in order_data.items), 2),
+        "warehouse": order_data.warehouse,
+        "category": primary_category,
+        "order_type": "restocking",
+        "actual_delivery": None,
+    }
+
+    orders.append(new_order)
+    return new_order
+
 
 @app.get("/api/demand", response_model=List[DemandForecast])
 def get_demand_forecasts():
