@@ -16,7 +16,7 @@
 # In[ ]:
 
 
-get_ipython().run_line_magic('pip', 'install anthropic matplotlib seaborn pandas numpy python-Levenshtein tqdm -q')
+# packages installed via: pip install anthropic matplotlib seaborn pandas numpy python-Levenshtein tqdm ipython
 
 
 # In[ ]:
@@ -34,14 +34,19 @@ import random
 import concurrent.futures
 import Levenshtein
 from pathlib import Path
-from tqdm.notebook import tqdm
-from IPython.display import display, Image
+from tqdm import tqdm
+from dotenv import load_dotenv
 
-key = "" #INSERT API KEY
-if not key:
-  raise(ValueError("NO API KEY SET!"))
+try:
+    from IPython.display import display, Image
+    IPYTHON_AVAILABLE = True
+except ImportError:
+    IPYTHON_AVAILABLE = False
+    def display(obj): print(obj)
+    Image = None
 
-client = anthropic.Anthropic(api_key=key)
+load_dotenv()
+client = anthropic.Anthropic()
 
 # ---- Pick your model ----
 # Public model strings:
@@ -67,7 +72,7 @@ print("Setup complete.")
 # Core Helper Functions
 # ============================================
 
-def call_model(prompt, model=None, max_tokens=1000, system=None, thinking=None):
+def call_model(prompt, model=None, max_tokens=1000, system=None, thinking=None, retries=5):
     """Single Anthropic API call. Returns response text."""
     model = model or MODEL
     kwargs = {
@@ -80,11 +85,20 @@ def call_model(prompt, model=None, max_tokens=1000, system=None, thinking=None):
     if thinking:
         kwargs["thinking"] = thinking
         kwargs["max_tokens"] = max(max_tokens, thinking.get("budget_tokens", 0) + max_tokens)
-    response = client.messages.create(**kwargs)
-    for block in response.content:
-        if block.type == "text":
-            return block.text
-    return ""
+    for attempt in range(retries):
+        try:
+            response = client.messages.create(**kwargs)
+            for block in response.content:
+                if block.type == "text":
+                    return block.text
+            return ""
+        except anthropic.RateLimitError:
+            if attempt < retries - 1:
+                wait = 60 * (2 ** attempt)
+                print(f"\n[Rate limit — waiting {wait}s, retry {attempt + 1}/{retries}]")
+                time.sleep(wait)
+            else:
+                raise
 
 
 def call_model_batch(items, model=None, max_tokens=1000, max_concurrent=10, system=None, thinking=None):
@@ -266,7 +280,7 @@ items = [
 ]
 
 print(f"Running {len(items)} prompts on {MODEL}...")
-rw_outputs = call_model_batch(items, model=MODEL, max_concurrent=15)
+rw_outputs = call_model_batch(items, model=MODEL, max_concurrent=5)
 rw_df["output"] = rw_outputs
 print(f"Done! Got {sum(1 for o in rw_outputs if o)} responses.")
 

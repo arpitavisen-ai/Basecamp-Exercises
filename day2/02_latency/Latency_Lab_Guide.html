@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inference Optimization — Visual Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #faf7f4; color: #1a1a1a; line-height: 1.6; }
+  .page { max-width: 1080px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .header { margin-bottom: 52px; }
+  .eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #c2673a; margin-bottom: 8px; }
+  .header h1 { font-size: 2.4rem; font-weight: 800; color: #111; margin-bottom: 6px; }
+  .header h1 span { color: #c2673a; }
+  .header p { color: #6b7280; font-size: 0.95rem; max-width: 560px; }
+
+  .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 60px; }
+  .step { display: flex; gap: 24px; padding: 28px 0; border-bottom: 1px solid #e5e0db; }
+  .step:last-child { border-bottom: none; }
+  .step-num { font-size: 0.72rem; font-weight: 800; color: #c2673a; letter-spacing: 0.1em; min-width: 32px; padding-top: 4px; }
+  .step-content { flex: 1; }
+  .step-content h2 { font-size: 1.15rem; font-weight: 700; color: #111; margin-bottom: 4px; }
+  .step-content .sub { font-size: 0.87rem; color: #6b7280; margin-bottom: 14px; }
+  .step-expand { background: #f5f0eb; border-radius: 10px; padding: 18px 20px; font-size: 0.87rem; color: #374151; }
+  .step-expand code { background: #e5e0db; border-radius: 4px; padding: 1px 5px; font-size: 0.82rem; }
+
+  hr { border: none; border-top: 1px solid #e5e0db; margin: 48px 0; }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px; }
+  @media (max-width: 700px) { .metrics-row { grid-template-columns: 1fr 1fr; } }
+  .metric-card { background: #fff; border: 1px solid #e5e0db; border-radius: 12px; padding: 18px; }
+  .metric-abbr { font-size: 1.3rem; font-weight: 800; color: #c2673a; margin-bottom: 4px; font-family: monospace; }
+  .metric-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; margin-bottom: 8px; }
+  .metric-desc { font-size: 0.82rem; color: #374151; }
+  .metric-card .formula { font-family: monospace; font-size: 0.78rem; background: #f5f0eb; border-radius: 6px; padding: 4px 8px; margin-top: 8px; color: #c2673a; display: inline-block; }
+
+  .timeline-wrap { background: #fff; border: 1px solid #e5e0db; border-radius: 14px; padding: 28px; margin-bottom: 28px; }
+  .timeline-wrap h3 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; margin-bottom: 20px; }
+  .timeline { position: relative; height: 64px; background: #f9fafb; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .tl-bar { position: absolute; top: 0; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: white; }
+  .tl-bar.request  { background: #6366f1; left: 0;   width: 8%;  border-radius: 8px 0 0 8px; }
+  .tl-bar.process  { background: #f59e0b; left: 8%;  width: 20%; }
+  .tl-bar.first    { background: #ef4444; left: 28%; width: 4%;  }
+  .tl-bar.stream   { background: #10b981; left: 32%; width: 44%; }
+  .tl-bar.end      { background: #6b7280; left: 76%; width: 24%; border-radius: 0 8px 8px 0; }
+  .tl-labels { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.72rem; }
+  .tl-label { display: flex; align-items: center; gap: 6px; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .bracket-row { position: relative; height: 28px; margin-top: 8px; }
+  .bracket { position: absolute; height: 20px; border: 2px solid; border-bottom: none; display: flex; align-items: flex-start; justify-content: center; font-size: 0.68rem; font-weight: 700; padding-top: 2px; letter-spacing: 0.05em; }
+  .br-ttft  { left: 0; width: 32%; border-color: #ef4444; color: #ef4444; }
+  .br-ttlt  { left: 0; width: 76%; border-color: #6366f1; color: #6366f1; }
+  .br-ttc   { left: 0; width: 100%; border-color: #374151; color: #374151; }
+
+  .model-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .model-grid { grid-template-columns: 1fr; } }
+  .model-card { border-radius: 12px; padding: 20px; border: 1px solid; }
+  .model-card.haiku  { background: #ecfdf5; border-color: #6ee7b7; }
+  .model-card.sonnet { background: #eff6ff; border-color: #93c5fd; }
+  .model-card.opus   { background: #faf5ff; border-color: #c4b5fd; }
+  .model-name { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .model-id   { font-size: 0.68rem; font-family: monospace; color: #9ca3af; margin-bottom: 10px; }
+  .model-card.haiku  .model-name { color: #059669; }
+  .model-card.sonnet .model-name { color: #2563eb; }
+  .model-card.opus   .model-name { color: #7c3aed; }
+  .model-desc { font-size: 0.83rem; color: #374151; margin-bottom: 12px; }
+  .model-stats { display: flex; flex-direction: column; gap: 6px; }
+  .stat-row { display: flex; justify-content: space-between; align-items: center; }
+  .stat-label { font-size: 0.72rem; color: #6b7280; font-family: monospace; min-width: 44px; }
+  .stat-bar-wrap { flex: 1; margin: 0 10px; background: rgba(0,0,0,0.07); border-radius: 4px; height: 6px; }
+  .stat-bar { height: 6px; border-radius: 4px; }
+  .haiku-bar  { background: #059669; }
+  .sonnet-bar { background: #2563eb; }
+  .opus-bar   { background: #7c3aed; }
+  .stat-val { font-size: 0.72rem; font-family: monospace; color: #374151; font-weight: 700; min-width: 52px; text-align: right; }
+
+  .tool-flow { display: flex; align-items: center; gap: 0; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; }
+  .tf-box { background: #fff; border: 1px solid #e5e0db; border-radius: 10px; padding: 12px 16px; text-align: center; min-width: 110px; flex-shrink: 0; }
+  .tf-box .tf-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; margin-bottom: 3px; }
+  .tf-box .tf-val   { font-size: 0.82rem; font-weight: 700; color: #111; }
+  .tf-box .tf-time  { font-size: 0.68rem; font-family: monospace; color: #c2673a; }
+  .tf-arr { color: #d1d5db; font-size: 1.2rem; padding: 0 6px; flex-shrink: 0; }
+  .tf-box.highlight { background: #fff7ed; border-color: #fb923c; }
+
+  .cache-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .cache-compare { grid-template-columns: 1fr; } }
+  .cc-card { border-radius: 12px; padding: 20px; border: 1px solid; }
+  .cc-card.before { background: #fef2f2; border-color: #fca5a5; }
+  .cc-card.after  { background: #f0fdf4; border-color: #86efac; }
+  .cc-card h4 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+  .cc-card.before h4 { color: #dc2626; }
+  .cc-card.after  h4 { color: #16a34a; }
+  .cc-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 8px; color: #374151; }
+  .cc-val { font-family: monospace; font-weight: 700; }
+  .before-val { color: #dc2626; }
+  .after-val  { color: #16a34a; }
+  .cache-pill { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+  .pill-miss { background: #fee2e2; color: #b91c1c; }
+  .pill-hit  { background: #dcfce7; color: #15803d; }
+
+  pre.code { background: #1e293b; color: #94a3b8; border-radius: 10px; padding: 18px; font-size: 0.78rem; line-height: 1.7; overflow-x: auto; margin-top: 12px; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .st { color: #34d399; } .cm { color: #475569; } .nb { color: #f59e0b; } .cls { color: #fb923c; }
+
+  .sec-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .sec-num { width: 36px; height: 36px; border-radius: 50%; background: #c2673a; color: white; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sec-header h2 { font-size: 1.3rem; font-weight: 800; color: #111; }
+  .sec-header p { font-size: 0.85rem; color: #6b7280; }
+  section { margin-bottom: 52px; }
+
+  .callout { background: #fff7ed; border-left: 3px solid #c2673a; border-radius: 0 8px 8px 0; padding: 14px 18px; font-size: 0.85rem; color: #78350f; margin: 14px 0; }
+  .callout strong { color: #c2673a; }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin: 14px 0; }
+  .data-table th { background: #f5f0eb; padding: 8px 12px; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; }
+  .data-table td { padding: 8px 12px; border-bottom: 1px solid #f0ebe5; color: #374151; font-family: monospace; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table .good { color: #059669; font-weight: 700; }
+  .data-table .bad  { color: #dc2626; font-weight: 700; }
+
+  .turn-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 14px; }
+  .turn-table th { background: #f5f0eb; padding: 7px 12px; text-align: left; font-size: 0.71rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; }
+  .turn-table td { padding: 7px 12px; border-bottom: 1px solid #f0ebe5; font-family: monospace; font-size: 0.8rem; color: #374151; }
+  .turn-table td.cached { color: #059669; font-weight: 700; }
+  .turn-table td.created { color: #f59e0b; font-weight: 700; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+  .info-box { background: #fff; border: 1px solid #e5e0db; border-radius: 12px; padding: 18px; }
+  .info-box h4 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #9ca3af; margin-bottom: 10px; }
+  .info-box ul { padding-left: 16px; font-size: 0.83rem; color: #374151; display: flex; flex-direction: column; gap: 5px; }
+  .info-box .good-head { color: #15803d; }
+  .info-box .bad-head  { color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="eyebrow">Hands-on Lab · Inference_Optimization.py</div>
+    <h1>Inference <span>Optimisation.</span></h1>
+    <p>Benchmark streaming latency, compare the Claude model family, measure tool-call overhead, and cut costs with prompt caching — all with real API calls.</p>
+  </div>
+
+  <!-- Step overview -->
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h2>Track metrics</h2>
+        <div class="sub">Build <code>BenchmarkResult</code>, <code>_stream_request</code>, <code>compute_otps</code>, <code>calculate_cost</code>.</div>
+        <div class="step-expand">
+          Instrument every streaming call to capture TTFT (first event), generation time, OTPS, and dollar cost. Store results in a typed dataclass so the <code>BenchmarkSuite</code> can aggregate and tabulate them.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h2>Benchmark the model family</h2>
+        <div class="sub">Run Haiku 4.5, Sonnet 4.5, Opus 4.5 on the same prompt — 5 runs each.</div>
+        <div class="step-expand">
+          Use <code>measure_streaming_latency</code> to collect TTFT, TTC, OTPS, and cost for each model. The <code>BenchmarkSuite.summary()</code> prints a ranked grid so you can see the speed/quality/cost trade-off at a glance.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h2>Add complexity: tool use</h2>
+        <div class="sub">Define a <code>calculator</code> tool and measure the two-call round-trip overhead.</div>
+        <div class="step-expand">
+          Call 1 → model returns <code>tool_use</code> block → execute locally → Call 2 → model returns final text. Compare TTC with and without the tool. TTFT resets each turn — always use TTC for agentic flows.
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h2>Add countermeasures: prompt caching</h2>
+        <div class="sub">Mark the system prompt with <code>cache_control: ephemeral</code> and track cold vs. warm latency.</div>
+        <div class="step-expand">
+          A large static system prompt (&gt;1024 tokens) is re-processed every request. After caching, subsequent calls read from the KV store — dramatically cutting TTFT and input-token cost. Also implemented for multi-turn conversations.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ── SECTION 01: METRICS ── -->
+  <section>
+    <div class="sec-header">
+      <div class="sec-num">01</div>
+      <div>
+        <h2>The Four Latency Metrics</h2>
+        <p>Captured on every streaming call via <code style="font-size:0.85rem">_stream_request()</code>.</p>
+      </div>
+    </div>
+
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-abbr">TTFT</div>
+        <div class="metric-name">Time to First Token</div>
+        <div class="metric-desc">How long before the model starts responding. Triggered by the <code style="font-size:0.78rem;background:#f5f0eb;border-radius:4px;padding:1px 4px">content_block_start</code> event in the stream.</div>
+        <div class="formula">t_first_event − t_start</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-abbr">OTPS</div>
+        <div class="metric-name">Output Tokens Per Second</div>
+        <div class="metric-desc">Streaming throughput after the first token. Computed from <code style="font-size:0.78rem;background:#f5f0eb;border-radius:4px;padding:1px 4px">gen_time = TTC − TTFT</code>.</div>
+        <div class="formula">output_tokens / gen_time</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-abbr">TTC</div>
+        <div class="metric-name">Time to Completion</div>
+        <div class="metric-desc">Total wall-clock time including stream close. Primary metric for tool-use flows where TTFT resets per turn.</div>
+        <div class="formula">t_after_stream − t_start</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-abbr">Cost</div>
+        <div class="metric-name">Request Cost ($)</div>
+        <div class="metric-desc">Computed per request from input/output token counts and per-model pricing. Aggregated by <code style="font-size:0.78rem;background:#f5f0eb;border-radius:4px;padding:1px 4px">BenchmarkSuite</code> as $/1K calls.</div>
+        <div class="formula">(in_tok/1M)×$in + (out_tok/1M)×$out</div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-wrap">
+      <h3>Request Timeline</h3>
+      <div class="timeline">
+        <div class="tl-bar request">Send</div>
+        <div class="tl-bar process">Processing</div>
+        <div class="tl-bar first"></div>
+        <div class="tl-bar stream">← Streaming tokens →</div>
+        <div class="tl-bar end">Close</div>
+      </div>
+      <div class="bracket-row">
+        <div class="bracket br-ttft">← TTFT →</div>
+        <div class="bracket br-ttlt" style="top:0">← TTLT ─────────────</div>
+        <div class="bracket br-ttc"  style="top:0">← TTC ───────────────────────────────</div>
+      </div>
+      <div style="margin-top:20px">
+        <div class="tl-labels">
+          <div class="tl-label"><div class="tl-dot" style="background:#6366f1"></div> Request sent</div>
+          <div class="tl-label"><div class="tl-dot" style="background:#f59e0b"></div> Server processing</div>
+          <div class="tl-label"><div class="tl-dot" style="background:#ef4444"></div> content_block_start (TTFT)</div>
+          <div class="tl-label"><div class="tl-dot" style="background:#10b981"></div> Streaming (OTPS zone)</div>
+          <div class="tl-label"><div class="tl-dot" style="background:#6b7280"></div> Stream closed (TTC)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- _stream_request + compute_otps -->
+    <pre class="code"><span class="cm"># _stream_request — captures TTFT via content_block_start event</span>
+<span class="kw">def</span> <span class="fn">_stream_request</span>(prompt, model=DEFAULT_MODEL, max_tokens=<span class="nb">256</span>):
+    ttft = <span class="kw">None</span>
+    start_time = time.perf_counter()
+    <span class="kw">with</span> client.messages.stream(
+        model=model, max_tokens=max_tokens,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}]
+    ) <span class="kw">as</span> stream:
+        <span class="kw">for</span> event <span class="kw">in</span> stream:
+            <span class="kw">if</span> ttft <span class="kw">is</span> <span class="kw">None</span> <span class="kw">and</span> event.type == <span class="st">"content_block_start"</span>:
+                ttft = time.perf_counter() - start_time   <span class="cm"># ← TTFT here</span>
+        response = stream.get_final_message()
+    total_time = time.perf_counter() - start_time         <span class="cm"># ← TTC here</span>
+    <span class="kw">return</span> ttft, total_time, response
+
+<span class="cm"># compute_otps — generation time excludes TTFT (server think time)</span>
+<span class="kw">def</span> <span class="fn">compute_otps</span>(ttft, total_time, output_tokens):
+    gen_time = total_time - ttft                          <span class="cm"># time actually streaming</span>
+    otps = output_tokens / gen_time <span class="kw">if</span> gen_time &gt; <span class="nb">0</span> <span class="kw">else</span> <span class="nb">0.0</span>
+    <span class="kw">return</span> otps, gen_time
+
+<span class="cm"># calculate_cost — per-model pricing ($/1M tokens)</span>
+PRICING = {
+    <span class="st">"claude-haiku-4-5-20251001"</span>:  {<span class="st">"input"</span>: <span class="nb">0.25</span>,  <span class="st">"output"</span>: <span class="nb">1.25</span>},
+    <span class="st">"claude-sonnet-4-5-20250929"</span>: {<span class="st">"input"</span>: <span class="nb">3.00</span>,  <span class="st">"output"</span>: <span class="nb">15.00</span>},
+    <span class="st">"claude-opus-4-5-20251101"</span>:   {<span class="st">"input"</span>: <span class="nb">15.00</span>, <span class="st">"output"</span>: <span class="nb">75.00</span>},
+}
+
+<span class="kw">def</span> <span class="fn">calculate_cost</span>(model, input_tokens, output_tokens):
+    prices = PRICING.get(model, {<span class="st">"input"</span>: <span class="nb">3.00</span>, <span class="st">"output"</span>: <span class="nb">15.00</span>})
+    input_cost  = (input_tokens  / <span class="nb">1_000_000</span>) * prices[<span class="st">"input"</span>]
+    output_cost = (output_tokens / <span class="nb">1_000_000</span>) * prices[<span class="st">"output"</span>]
+    <span class="kw">return</span> input_cost, output_cost, input_cost + output_cost</pre>
+
+    <!-- BenchmarkResult / Suite -->
+    <pre class="code" style="margin-top:12px"><span class="cm"># BenchmarkResult — typed dataclass for a single API call</span>
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="cls">BenchmarkResult</span>:
+    ttft: <span class="cls">float</span>               <span class="cm"># Time to First Token (s)</span>
+    total_time: <span class="cls">float</span>         <span class="cm"># TTC (s)</span>
+    tokens_per_second: <span class="cls">float</span>  <span class="cm"># legacy field</span>
+    input_tokens: <span class="cls">int</span>
+    output_tokens: <span class="cls">int</span>
+    model: <span class="cls">str</span>
+    test_name: <span class="cls">str</span>
+    otps: <span class="cls">Optional</span>[<span class="cls">float</span>] = <span class="kw">None</span>   <span class="cm"># output tokens per second</span>
+    cost: <span class="cls">Optional</span>[<span class="cls">float</span>] = <span class="kw">None</span>   <span class="cm"># total $ cost</span>
+    cache_creation_input_tokens: <span class="cls">Optional</span>[<span class="cls">int</span>] = <span class="kw">None</span>
+    cache_read_input_tokens: <span class="cls">Optional</span>[<span class="cls">int</span>] = <span class="kw">None</span>
+
+<span class="cm"># BenchmarkSuite.summary() groups results and prints a tabulate grid</span>
+<span class="cm"># Headers: Test | Runs | TTFT(ms) | TTC(ms) | OTPS | $/1K calls</span>
+suite = <span class="cls">BenchmarkSuite</span>()
+suite.add_result(result)   <span class="cm"># add after each run</span>
+<span class="nb">print</span>(suite.summary())    <span class="cm"># prints formatted grid</span></pre>
+  </section>
+
+  <hr>
+
+  <!-- ── SECTION 02: MODEL COMPARISON ── -->
+  <section>
+    <div class="sec-header">
+      <div class="sec-num">02</div>
+      <div>
+        <h2>Model Family Benchmark</h2>
+        <p>5 runs each, prompt: "What is machine learning? Answer in 2 sentences."</p>
+      </div>
+    </div>
+
+    <!-- Actual measured numbers from benchmark run -->
+    <div class="model-grid">
+      <div class="model-card haiku">
+        <div class="model-name">Haiku 4.5</div>
+        <div class="model-id">claude-haiku-4-5-20251001</div>
+        <div class="model-desc">Fastest model. Best for high-volume, latency-sensitive tasks.</div>
+        <div class="model-stats">
+          <div class="stat-row">
+            <span class="stat-label">TTFT</span>
+            <div class="stat-bar-wrap"><div class="stat-bar haiku-bar" style="width:44%"></div></div>
+            <span class="stat-val">733 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">TTC</span>
+            <div class="stat-bar-wrap"><div class="stat-bar haiku-bar" style="width:43%"></div></div>
+            <span class="stat-val">1069 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">OTPS</span>
+            <div class="stat-bar-wrap"><div class="stat-bar haiku-bar" style="width:100%"></div></div>
+            <span class="stat-val">157 t/s</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">$/1K</span>
+            <div class="stat-bar-wrap"><div class="stat-bar haiku-bar" style="width:2%"></div></div>
+            <span class="stat-val">$0.34</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="model-card sonnet">
+        <div class="model-name">Sonnet 4.5</div>
+        <div class="model-id">claude-sonnet-4-5-20250929</div>
+        <div class="model-desc">Balanced model. Strong reasoning at reasonable latency and cost.</div>
+        <div class="model-stats">
+          <div class="stat-row">
+            <span class="stat-label">TTFT</span>
+            <div class="stat-bar-wrap"><div class="stat-bar sonnet-bar" style="width:100%"></div></div>
+            <span class="stat-val">1652 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">TTC</span>
+            <div class="stat-bar-wrap"><div class="stat-bar sonnet-bar" style="width:100%"></div></div>
+            <span class="stat-val">2463 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">OTPS</span>
+            <div class="stat-bar-wrap"><div class="stat-bar sonnet-bar" style="width:39%"></div></div>
+            <span class="stat-val">62 t/s</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">$/1K</span>
+            <div class="stat-bar-wrap"><div class="stat-bar sonnet-bar" style="width:20%"></div></div>
+            <span class="stat-val">$3.99</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="model-card opus">
+        <div class="model-name">Opus 4.5</div>
+        <div class="model-id">claude-opus-4-5-20251101</div>
+        <div class="model-desc">Most capable model. Best for complex reasoning where quality matters most.</div>
+        <div class="model-stats">
+          <div class="stat-row">
+            <span class="stat-label">TTFT</span>
+            <div class="stat-bar-wrap"><div class="stat-bar opus-bar" style="width:58%"></div></div>
+            <span class="stat-val">960 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">TTC</span>
+            <div class="stat-bar-wrap"><div class="stat-bar opus-bar" style="width:67%"></div></div>
+            <span class="stat-val">1658 ms</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">OTPS</span>
+            <div class="stat-bar-wrap"><div class="stat-bar opus-bar" style="width:46%"></div></div>
+            <span class="stat-val">73 t/s</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">$/1K</span>
+            <div class="stat-bar-wrap"><div class="stat-bar opus-bar" style="width:100%"></div></div>
+            <span class="stat-val">$20.18</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Observed result:</strong> Bar widths for TTFT/TTC show actual measured averages (wider = slower). Opus had faster TTC than Sonnet in this run — short outputs and infrastructure conditions vary. Always run multiple samples (<code>range(5)</code>) and take the mean.
+    </div>
+
+    <pre class="code"><span class="cm"># Section 02: benchmark loop — runs every model 5 times</span>
+models = [
+    (MODEL_HAIKU,  <span class="st">"haiku"</span>),
+    (MODEL_SONNET, <span class="st">"sonnet"</span>),
+    (MODEL_OPUS,   <span class="st">"opus"</span>),
+]
+
+<span class="kw">for</span> model_id, model_name <span class="kw">in</span> models:
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="nb">5</span>):
+        result = <span class="fn">measure_streaming_latency</span>(PROMPT, model=model_id, test_name=model_name)
+        suite.add_result(result)
+        <span class="nb">print</span>(<span class="st">f"  Run {i+1}: TTFT={result.ttft*1000:.0f}ms, TTC={result.total_time*1000:.0f}ms, OTPS={result.otps:.1f}, Cost=${result.cost:.6f}"</span>)
+
+<span class="nb">print</span>(suite.summary())   <span class="cm"># → tabulate grid grouped by test_name</span></pre>
+  </section>
+
+  <hr>
+
+  <!-- ── SECTION 03: TOOL USE ── -->
+  <section>
+    <div class="sec-header">
+      <div class="sec-num">03</div>
+      <div>
+        <h2>Tool Use &amp; Latency</h2>
+        <p>A calculator tool — define the schema, execute locally, measure the 2-call round-trip.</p>
+      </div>
+    </div>
+
+    <!-- CALCULATOR_TOOL schema -->
+    <pre class="code"><span class="cm"># CALCULATOR_TOOL — operation enum + operands array</span>
+CALCULATOR_TOOL = {
+    <span class="st">"name"</span>: <span class="st">"calculator"</span>,
+    <span class="st">"description"</span>: <span class="st">"Performs basic arithmetic operations."</span>,
+    <span class="st">"input_schema"</span>: {
+        <span class="st">"type"</span>: <span class="st">"object"</span>,
+        <span class="st">"properties"</span>: {
+            <span class="st">"operation"</span>: {
+                <span class="st">"type"</span>: <span class="st">"string"</span>,
+                <span class="st">"enum"</span>: [<span class="st">"add"</span>, <span class="st">"subtract"</span>, <span class="st">"multiply"</span>, <span class="st">"divide"</span>],
+                <span class="st">"description"</span>: <span class="st">"The arithmetic operation to perform."</span>,
+            },
+            <span class="st">"operands"</span>: {
+                <span class="st">"type"</span>: <span class="st">"array"</span>, <span class="st">"items"</span>: {<span class="st">"type"</span>: <span class="st">"number"</span>},
+                <span class="st">"description"</span>: <span class="st">"List of two numbers to operate on."</span>,
+            },
+        },
+        <span class="st">"required"</span>: [<span class="st">"operation"</span>, <span class="st">"operands"</span>]
+    }
+}</pre>
+
+    <!-- Two-call flow diagram -->
+    <div style="margin: 20px 0 8px">
+      <p style="font-size:0.82rem;color:#6b7280;margin-bottom:12px">Two-call round-trip for a single tool use — TTFT is captured after Call 1 only:</p>
+      <div class="tool-flow">
+        <div class="tf-box"><div class="tf-label">User query</div><div class="tf-val">prompt</div><div class="tf-time">t=0</div></div>
+        <div class="tf-arr">→</div>
+        <div class="tf-box"><div class="tf-label">Call 1</div><div class="tf-val">tools=[…]</div><div class="tf-time">TTFT here</div></div>
+        <div class="tf-arr">→</div>
+        <div class="tf-box highlight"><div class="tf-label">stop_reason</div><div class="tf-val">tool_use</div><div class="tf-time">stream paused</div></div>
+        <div class="tf-arr">→</div>
+        <div class="tf-box highlight"><div class="tf-label">Local exec</div><div class="tf-val">execute_calculator()</div><div class="tf-time">~0ms</div></div>
+        <div class="tf-arr">→</div>
+        <div class="tf-box"><div class="tf-label">Call 2</div><div class="tf-val">tool_result</div><div class="tf-time">new round-trip</div></div>
+        <div class="tf-arr">→</div>
+        <div class="tf-box"><div class="tf-label">Final text</div><div class="tf-val">end_turn</div><div class="tf-time">TTC captured</div></div>
+      </div>
+    </div>
+
+    <pre class="code"><span class="cm"># measure_tool_use_latency — full 2-call round-trip</span>
+start_time = time.perf_counter()
+
+first_response = client.messages.create(
+    model=model, max_tokens=max_tokens, tools=[CALCULATOR_TOOL],
+    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}],
+)
+ttft = time.perf_counter() - start_time    <span class="cm"># ← TTFT after Call 1</span>
+
+tool_use_block = <span class="fn">next</span>(
+    (b <span class="kw">for</span> b <span class="kw">in</span> first_response.content <span class="kw">if</span> b.type == <span class="st">"tool_use"</span>), <span class="kw">None</span>
+)
+result = <span class="fn">execute_calculator</span>(tool_use_block.input[<span class="st">"operation"</span>], tool_use_block.input[<span class="st">"operands"</span>])
+
+second_response = client.messages.create(
+    model=model, max_tokens=max_tokens, tools=[CALCULATOR_TOOL],
+    messages=[
+        {<span class="st">"role"</span>: <span class="st">"user"</span>,      <span class="st">"content"</span>: prompt},
+        {<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: first_response.content},
+        {<span class="st">"role"</span>: <span class="st">"user"</span>,      <span class="st">"content"</span>: [{
+            <span class="st">"type"</span>: <span class="st">"tool_result"</span>, <span class="st">"tool_use_id"</span>: tool_use_block.id,
+            <span class="st">"content"</span>: <span class="fn">str</span>(result)
+        }]},
+    ],
+)
+total_time = time.perf_counter() - start_time  <span class="cm"># ← TTC after Call 2</span></pre>
+
+    <!-- no_tool vs with_tool measured results -->
+    <div style="margin-top:20px">
+      <p style="font-size:0.82rem;color:#6b7280;margin-bottom:10px">Measured results — "What is 42 × 17?" — 5 runs each:</p>
+      <table class="data-table">
+        <thead><tr><th>Test</th><th>TTFT (avg)</th><th>TTC (avg)</th><th>OTPS (avg)</th><th>$/1K calls</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>no_tool</td>
+            <td class="good">1629 ms</td>
+            <td class="good">3802 ms</td>
+            <td>65.5</td>
+            <td>$10.04</td>
+            <td>model does mental arithmetic, verbose</td>
+          </tr>
+          <tr>
+            <td>with_tool</td>
+            <td class="bad">2666 ms</td>
+            <td class="bad">4690 ms</td>
+            <td>44.8</td>
+            <td>$26.78</td>
+            <td>2 API calls, 2× tokens billed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>Key insight:</strong> TTFT resets on every round-trip. For multi-tool chains, measuring only the first TTFT understates total latency — always use <strong>TTC</strong> for agentic flows. Tool use also doubles billed tokens (context is resent on Call 2).
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ── SECTION 04: CACHING ── -->
+  <section>
+    <div class="sec-header">
+      <div class="sec-num">04</div>
+      <div>
+        <h2>Prompt Caching</h2>
+        <p>Mark static content with <code style="font-size:0.85rem">cache_control: ephemeral</code> — skip re-processing on subsequent calls.</p>
+      </div>
+    </div>
+
+    <!-- Cold / Warm comparison -->
+    <div class="cache-compare">
+      <div class="cc-card before">
+        <h4>Cold call (first request)</h4>
+        <div class="cc-row"><span>Cache status</span><span class="cache-pill pill-miss">CACHE MISS</span></div>
+        <div class="cc-row"><span>cache_creation tokens</span><span class="cc-val before-val">written to KV store</span></div>
+        <div class="cc-row"><span>cache_read tokens</span><span class="cc-val before-val">0</span></div>
+        <div class="cc-row"><span>Elapsed (observed)</span><span class="cc-val before-val">~9652 ms</span></div>
+        <div class="cc-row"><span>Cost</span><span class="cc-val before-val">full input tokens</span></div>
+      </div>
+      <div class="cc-card after">
+        <h4>Warm call (same system prompt)</h4>
+        <div class="cc-row"><span>Cache status</span><span class="cache-pill pill-hit">CACHE HIT</span></div>
+        <div class="cc-row"><span>cache_creation tokens</span><span class="cc-val after-val">0</span></div>
+        <div class="cc-row"><span>cache_read tokens</span><span class="cc-val after-val">1161 tokens read</span></div>
+        <div class="cc-row"><span>Elapsed (observed)</span><span class="cc-val after-val">~7276 ms</span></div>
+        <div class="cc-row"><span>Cost</span><span class="cc-val after-val">~10% of normal</span></div>
+      </div>
+    </div>
+
+    <pre class="code"><span class="cm"># system_block — static system prompt marked for caching</span>
+<span class="cm"># Must be &gt;1024 tokens for cache to activate</span>
+SYSTEM_PROMPT = <span class="st">"""You are an expert API documentation assistant..."""</span> * <span class="nb">20</span>
+
+system_block = [{
+    <span class="st">"type"</span>: <span class="st">"text"</span>,
+    <span class="st">"text"</span>: SYSTEM_PROMPT,
+    <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}   <span class="cm"># ← breakpoint here</span>
+}]
+
+<span class="kw">def</span> <span class="fn">cached_request</span>(question):
+    start = time.perf_counter()
+    response = client.messages.create(
+        model=DEFAULT_MODEL, max_tokens=<span class="nb">256</span>,
+        system=system_block,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: question}],
+    )
+    elapsed = time.perf_counter() - start
+    <span class="kw">return</span> response, elapsed
+
+<span class="cm"># Read cache usage from response</span>
+<span class="nb">print</span>(<span class="st">f"Cache created: {r.usage.cache_creation_input_tokens or 0}"</span>)
+<span class="nb">print</span>(<span class="st">f"Cache read:    {r.usage.cache_read_input_tokens or 0}"</span>)</pre>
+
+    <!-- Multi-turn caching -->
+    <div style="margin-top:28px">
+      <h3 style="font-size:1rem;font-weight:700;color:#111;margin-bottom:8px">Multi-turn conversation caching</h3>
+      <p style="font-size:0.84rem;color:#6b7280;margin-bottom:14px">Mark the <em>previous</em> assistant message with <code style="background:#f5f0eb;border-radius:4px;padding:1px 5px;font-size:0.82rem">cache_control</code> before each new API call. Cached tokens grow each turn as the conversation accumulates.</p>
+
+      <table class="turn-table">
+        <thead><tr><th>Turn</th><th>Question</th><th>Elapsed</th><th>Cache read (tokens)</th><th>Cache created (tokens)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Design a REST API for a todo app</td><td>5302 ms</td><td class="cached">1257</td><td class="created">0</td></tr>
+          <tr><td>2</td><td>Now add authentication</td><td>4481 ms</td><td class="cached">1257</td><td class="created">303</td></tr>
+          <tr><td>3</td><td>Add rate limiting</td><td>5046 ms</td><td class="cached">1560</td><td class="created">313</td></tr>
+          <tr><td>4</td><td>Now add team support</td><td>5960 ms</td><td class="cached">1873</td><td class="created">315</td></tr>
+          <tr><td>5</td><td>Summarize the full API design</td><td>7583 ms</td><td class="cached">2188</td><td class="created">317</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="code" style="margin-top:14px"><span class="cm"># chat() — multi-turn caching: mark last assistant msg before each call</span>
+<span class="kw">def</span> <span class="fn">chat</span>(messages, new_question):
+    <span class="cm"># Strip old cache breakpoints from earlier turns</span>
+    <span class="kw">for</span> msg <span class="kw">in</span> messages:
+        <span class="kw">if</span> msg[<span class="st">"role"</span>] == <span class="st">"assistant"</span> <span class="kw">and</span> <span class="fn">isinstance</span>(msg[<span class="st">"content"</span>], <span class="cls">list</span>):
+            msg[<span class="st">"content"</span>] = msg[<span class="st">"content"</span>][<span class="nb">0</span>][<span class="st">"text"</span>]
+
+    <span class="cm"># Mark the last assistant message — cache everything up to here</span>
+    <span class="kw">if</span> messages <span class="kw">and</span> messages[-<span class="nb">1</span>][<span class="st">"role"</span>] == <span class="st">"assistant"</span>:
+        last = messages[-<span class="nb">1</span>]
+        text = last[<span class="st">"content"</span>] <span class="kw">if</span> <span class="fn">isinstance</span>(last[<span class="st">"content"</span>], <span class="cls">str</span>) <span class="kw">else</span> last[<span class="st">"content"</span>][<span class="nb">0</span>][<span class="st">"text"</span>]
+        last[<span class="st">"content"</span>] = [{
+            <span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: text,
+            <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}   <span class="cm"># ← grows each turn</span>
+        }]
+
+    messages.append({<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: new_question})
+    response = client.messages.create(model=MODEL_SONNET, max_tokens=<span class="nb">300</span>,
+                                       system=SYSTEM, messages=messages)
+    messages.append({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: response.content[<span class="nb">0</span>].text})
+    <span class="kw">return</span> response.content[<span class="nb">0</span>].text, response.usage</pre>
+
+    <div class="two-col" style="margin-top:20px">
+      <div class="info-box">
+        <h4 class="good-head">Cache these (static)</h4>
+        <ul>
+          <li>System prompt / persona</li>
+          <li>Tool definitions</li>
+          <li>Long document / knowledge base</li>
+          <li>Few-shot examples</li>
+          <li>Previous assistant turns in a conversation</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h4 class="bad-head">Don't cache these (dynamic)</h4>
+        <ul>
+          <li>User name / session ID injected into system prompt</li>
+          <li>Current date/time before the breakpoint</li>
+          <li>Per-request variables in the prefix</li>
+          <li>Anything that changes between calls</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:16px">
+      <strong>Cache rules:</strong> TTL is 5 minutes. Minimum 1024 tokens to activate. Any change to content <em>before</em> the breakpoint invalidates the cache. Put dynamic content <em>after</em> the last <code>cache_control</code> marker.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

@@ -65,6 +65,20 @@ with timed("setup"):
 print("  RESULT: PASS\n")
 
 
+def create_with_retry(retries=5, **kwargs):
+    """client.messages.create with exponential backoff on rate limit errors."""
+    for attempt in range(retries):
+        try:
+            return client.messages.create(**kwargs)
+        except anthropic.RateLimitError:
+            if attempt < retries - 1:
+                wait = 60 * (2 ** attempt)
+                print(f"\n  [Rate limit — waiting {wait}s, retry {attempt + 1}/{retries}]")
+                time.sleep(wait)
+            else:
+                raise
+
+
 # ============================================================
 # STEP 2: Mock KB setup and tool definition
 # ============================================================
@@ -285,7 +299,7 @@ def answer_single_question(
     max_turns = 5
     tool_calls_made = 0
     for turn in range(max_turns):
-        response = client.messages.create(
+        response = create_with_retry(
             model=model,
             max_tokens=2048,
             system=SYSTEM_PROMPT,
@@ -484,7 +498,7 @@ Return your review as JSON:
     "overall_assessment": "Brief summary of answer quality and consistency"
 }}"""
 
-    response = client.messages.create(
+    response = create_with_retry(
         model="claude-sonnet-4-20250514",
         max_tokens=2048,
         messages=[{"role": "user", "content": review_prompt}]
