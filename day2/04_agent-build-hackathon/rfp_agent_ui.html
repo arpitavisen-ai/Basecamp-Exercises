@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helios RFP Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-orange: #E07A5F;
+      --brand-dark:   #1A1A2E;
+      --success:      #2D9E6B;
+      --warning:      #F0A500;
+      --error:        #D94F3D;
+      --surface:      #F8F8FA;
+      --card:         #FFFFFF;
+      --muted:        #6B7280;
+      --border:       #E5E7EB;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.6; background: var(--surface); color: var(--brand-dark); }
+
+    .app-shell { height: 100vh; display: flex; flex-direction: column; }
+    .global-top-bar { height: 52px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 16px; flex-shrink: 0; z-index: 100; }
+    .logo { font-weight: 700; font-size: 15px; color: var(--brand-dark); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .logo-icon { width: 28px; height: 28px; background: var(--brand-orange); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }
+    .step-indicator { display: flex; align-items: center; margin: 0 auto; }
+    .step { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); padding: 4px 10px; cursor: default; }
+    .step.active { color: var(--brand-orange); }
+    .step.done   { color: var(--success); cursor: pointer; }
+    .step-num { width: 20px; height: 20px; border-radius: 50%; border: 2px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+    .step.active .step-num { background: var(--brand-orange); border-color: var(--brand-orange); color: white; }
+    .step.done   .step-num { background: var(--success); border-color: var(--success); color: white; }
+    .step-sep { color: var(--border); font-size: 16px; user-select: none; }
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--brand-dark); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
+
+    .main-content { flex: 1; overflow: hidden; position: relative; }
+    .screen { display: none; height: 100%; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* SCREEN 1 */
+    #screen1 { align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+    .input-card { background: var(--card); border-radius: 16px; padding: 40px; width: 100%; max-width: 680px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .hero-heading { font-size: 30px; font-weight: 700; margin-bottom: 6px; }
+    .hero-sub { font-size: 15px; color: var(--muted); margin-bottom: 24px; }
+    .tab-switcher { display: flex; background: var(--surface); border-radius: 8px; padding: 4px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 7px 16px; border: none; background: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+    .tab-btn.active { background: var(--card); color: var(--brand-dark); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .rfp-textarea { width: 100%; min-height: 200px; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: var(--brand-dark); resize: vertical; outline: none; transition: border-color 0.15s; }
+    .rfp-textarea:focus { border-color: var(--brand-orange); }
+    .csv-drop-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 48px 24px; text-align: center; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+    .csv-drop-zone:hover { border-color: var(--brand-orange); background: #FFF8F6; }
+    .csv-drop-zone .drop-icon { font-size: 32px; margin-bottom: 10px; }
+    .csv-drop-zone p { font-size: 14px; margin-bottom: 4px; }
+    .csv-drop-zone small { font-size: 12px; }
+    .detection-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; min-height: 26px; }
+    .q-count-badge { background: var(--brand-dark); color: white; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .cat-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; font-size: 11px; font-weight: 500; padding: 2px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; }
+    .chip-technical    { background: #EEF2FF; color: #4F46E5; }
+    .chip-compliance   { background: #F0FDF4; color: #16A34A; }
+    .chip-pricing      { background: #FFF7ED; color: #EA580C; }
+    .chip-company-info { background: #F0F9FF; color: #0284C7; }
+    .chip-contradiction { background: #FEF2F2; color: #B91C1C; }
+    .chip-inconsistency { background: #FFFBEB; color: #B45309; }
+    .chip-tone_mismatch { background: #EFF6FF; color: #1D4ED8; }
+    .chip-missing_info  { background: #F3F4F6; color: #374151; }
+    .chip-grey          { background: #F3F4F6; color: #374151; }
+    .start-btn { width: 100%; padding: 13px; background: var(--brand-orange); color: white; border: none; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 18px; transition: opacity 0.15s, transform 0.1s; }
+    .start-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .start-btn:disabled { opacity: 0.38; cursor: not-allowed; }
+    .footer-note { text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 14px; }
+
+    /* SCREEN 2 */
+    #screen2 { flex-direction: row; overflow: hidden; }
+    .log-panel { flex: 0 0 60%; background: var(--brand-dark); display: flex; flex-direction: column; }
+    .log-header { padding: 18px 24px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .log-header h3 { color: #F1F5F9; font-size: 14px; font-weight: 600; }
+    .pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--success); animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .log-stream { flex: 1; overflow-y: auto; padding: 14px 24px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.75; }
+    .log-line { display: block; }
+    .c-grey   { color: #94A3B8; }
+    .c-blue   { color: #60A5FA; }
+    .c-green  { color: #34D399; }
+    .c-orange { color: #FBBF24; }
+    .c-red    { color: #F87171; }
+    .progress-panel { flex: 0 0 40%; background: var(--card); display: flex; flex-direction: column; padding: 22px 22px 18px; overflow-y: auto; }
+    .ring-wrap { display: flex; align-items: center; justify-content: center; padding: 14px 0 18px; }
+    .ring-container { position: relative; width: 112px; height: 112px; }
+    .ring-svg { transform: rotate(-90deg); }
+    .ring-bg   { fill: none; stroke: var(--border); stroke-width: 9; }
+    .ring-fill { fill: none; stroke: var(--brand-orange); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+    .ring-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ring-count { font-size: 26px; font-weight: 700; line-height: 1; }
+    .ring-total { font-size: 11px; color: var(--muted); }
+    .proc-meta { display: flex; justify-content: space-around; margin-bottom: 18px; }
+    .meta-cell { text-align: center; }
+    .meta-val { font-size: 20px; font-weight: 700; }
+    .meta-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q-status-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .q-status-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; background: var(--surface); }
+    .si { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+    .si-pending { border: 2px solid var(--border); background: white; }
+    .si-running { border: 2px solid var(--brand-orange); background: white; animation: spin 1s linear infinite; }
+    .si-done    { background: var(--success); color: white; font-size: 12px; }
+    .si-error   { background: var(--error); color: white; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .q-info { flex: 1; }
+    .q-info-id   { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    .q-info-time { font-size: 11px; color: var(--muted); }
+    .cancel-btn { margin-top: 16px; width: 100%; padding: 9px; border: 1.5px solid var(--border); background: none; border-radius: 8px; font-family: inherit; font-size: 13px; color: var(--muted); cursor: pointer; }
+
+    /* SCREEN 3 */
+    #screen3 { overflow: hidden; }
+    .review-top-bar { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 22px; display: flex; align-items: center; gap: 18px; flex-shrink: 0; flex-wrap: wrap; }
+    .rfp-name-input { font-size: 15px; font-weight: 600; border: none; outline: none; background: none; font-family: inherit; color: var(--brand-dark); min-width: 200px; }
+    .stats-row { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+    .stats-sep { color: var(--border); }
+    .action-group { display: flex; gap: 8px; margin-left: auto; }
+    .btn-primary { padding: 7px 16px; background: var(--brand-orange); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-outline { padding: 7px 14px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--brand-dark); cursor: pointer; }
+    .btn-outline:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+    .btn-icon { padding: 7px 10px; background: none; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 14px; }
+    .review-panels { display: flex; flex: 1; overflow: hidden; }
+    .answers-panel { flex: 0 0 56%; overflow-y: auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .answer-card { background: var(--card); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; border-left: 4px solid transparent; transition: border-color 0.2s, box-shadow 0.2s; scroll-margin-top: 16px; }
+    .answer-card.flagged    { border-left-color: var(--warning); }
+    .answer-card.has-issues { border-left-color: var(--error); }
+    .answer-card.editing    { border-left-color: #3B82F6; }
+    .answer-card.highlight  { box-shadow: 0 0 0 3px var(--brand-orange), 0 2px 8px rgba(0,0,0,0.06); }
+    .card-hdr { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
+    .card-hdr-l { display: flex; align-items: center; gap: 8px; }
+    .card-hdr-r { display: flex; align-items: center; gap: 6px; }
+    .q-id { font-weight: 700; font-size: 14px; }
+    .conf-dots { display: flex; gap: 3px; }
+    .conf-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .conf-dot.on.high   { background: var(--success); }
+    .conf-dot.on.medium { background: var(--warning); }
+    .conf-dot.on.low    { background: var(--error); }
+    .conf-dot:not(.on)  { background: var(--border); }
+    .conf-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .conf-label.high   { color: var(--success); }
+    .conf-label.medium { color: var(--warning); }
+    .conf-label.low    { color: var(--error); }
+    .issue-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--error); }
+    .card-q { padding: 0 16px 10px; font-size: 12.5px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-divider { height: 1px; background: var(--border); margin: 0 16px; }
+    .flags-banner { margin: 10px 16px 0; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 8px 12px; font-size: 12.5px; color: #92400E; display: flex; gap: 6px; }
+    .card-answer { padding: 12px 16px; font-size: 13.5px; line-height: 1.75; color: var(--brand-dark); max-height: 148px; overflow: hidden; position: relative; }
+    .card-answer.expanded { max-height: none; }
+    .card-answer:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 36px; background: linear-gradient(transparent, white); }
+    .show-more-btn { display: block; width: 100%; padding: 4px 16px 10px; background: none; border: none; text-align: left; font-family: inherit; font-size: 12.5px; color: var(--brand-orange); cursor: pointer; }
+    .edit-area { display: none; padding: 4px 16px 12px; }
+    .edit-area.active { display: block; }
+    .edit-ta { width: 100%; min-height: 110px; border: 1.5px solid #3B82F6; border-radius: 8px; padding: 10px 12px; font-family: inherit; font-size: 13.5px; line-height: 1.75; resize: vertical; outline: none; }
+    .edit-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .edit-save   { padding: 5px 14px; background: #3B82F6; color: white; border: none; border-radius: 6px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+    .edit-cancel { padding: 5px 14px; background: none; border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+    .card-sources { padding: 8px 16px 12px; border-top: 1px solid var(--border); }
+    .sources-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; }
+    .source-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--brand-orange); cursor: pointer; margin-bottom: 3px; }
+    .source-pill:hover { text-decoration: underline; }
+    .card-actions { padding: 8px 16px 12px; display: flex; gap: 6px; border-top: 1px solid var(--border); }
+    .card-btn { padding: 5px 12px; border: 1.5px solid var(--border); background: none; border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 500; color: var(--brand-dark); cursor: pointer; transition: all 0.15s; }
+    .card-btn:hover { border-color: var(--brand-dark); }
+    .card-btn.danger { color: var(--error); border-color: #FECACA; }
+    .card-btn.danger:hover { border-color: var(--error); }
+    .review-side { flex: 0 0 44%; display: flex; flex-direction: column; border-left: 1px solid var(--border); overflow: hidden; }
+    .consistency-panel { flex: 1; overflow-y: auto; padding: 16px; }
+    .panel-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .panel-title { font-size: 14px; font-weight: 700; }
+    .status-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+    .badge-issues { background: #FFFBEB; color: #B45309; }
+    .badge-pass   { background: #F0FDF4; color: #16A34A; }
+    .assessment-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; font-size: 12.5px; color: var(--brand-dark); line-height: 1.6; margin-bottom: 14px; }
+    .issues-list { display: flex; flex-direction: column; gap: 10px; }
+    .issue-card { background: var(--card); border-radius: 10px; padding: 13px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .issue-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+    .involved { font-size: 11px; font-weight: 600; color: var(--muted); }
+    .issue-desc { font-size: 12.5px; color: var(--brand-dark); line-height: 1.5; margin-bottom: 6px; }
+    .issue-fix  { font-size: 11.5px; color: var(--muted); font-style: italic; margin-bottom: 9px; }
+    .issue-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+    .goto-btn { padding: 4px 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 11px; font-weight: 500; color: var(--brand-dark); cursor: pointer; }
+    .goto-btn:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+    .dismiss-btn { padding: 4px 10px; background: none; border: none; font-family: inherit; font-size: 11px; color: var(--muted); cursor: pointer; }
+    .dismiss-btn:hover { color: var(--error); }
+    .rerun-btn { width: 100%; margin-top: 14px; padding: 8px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--brand-dark); cursor: pointer; }
+    .rerun-btn:hover { border-color: var(--brand-orange); color: var(--brand-orange); }
+
+    /* SOURCE DRAWER */
+    .source-drawer { position: fixed; top: 52px; right: 0; bottom: 0; width: 370px; background: var(--card); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.25s ease; z-index: 200; display: flex; flex-direction: column; }
+    .source-drawer.open { transform: translateX(0); }
+    .drawer-hdr { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; }
+    .drawer-title { font-weight: 600; font-size: 14px; line-height: 1.4; padding-right: 12px; }
+    .drawer-close { width: 26px; height: 26px; border: none; background: var(--surface); border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); flex-shrink: 0; }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 18px; }
+    .drawer-meta { margin-bottom: 14px; }
+    .drawer-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px; }
+    .used-in-wrap { display: flex; gap: 8px; flex-wrap: wrap; }
+    .used-in-link { font-size: 13px; color: var(--brand-orange); cursor: pointer; text-decoration: underline; }
+    .drawer-tags  { display: flex; gap: 5px; flex-wrap: wrap; }
+    .drawer-content { border: 1px solid var(--border); border-radius: 8px; padding: 13px; font-size: 13px; line-height: 1.7; background: var(--surface); color: var(--brand-dark); }
+
+    /* SCREEN 4 */
+    #screen4 { flex-direction: row; overflow: hidden; }
+    .export-opts { flex: 0 0 36%; padding: 28px 24px; overflow-y: auto; border-right: 1px solid var(--border); }
+    .export-opts h2 { font-size: 18px; font-weight: 700; margin-bottom: 22px; }
+    .form-grp { margin-bottom: 22px; }
+    .form-lbl { font-size: 12px; font-weight: 600; color: var(--brand-dark); margin-bottom: 9px; display: block; }
+    .radio-grp, .check-grp { display: flex; flex-direction: column; gap: 9px; }
+    .radio-item, .check-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; }
+    input[type="radio"], input[type="checkbox"] { accent-color: var(--brand-orange); }
+    .export-name { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13.5px; outline: none; }
+    .export-name:focus { border-color: var(--brand-orange); }
+    .dl-btn { width: 100%; padding: 11px; background: var(--brand-orange); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: opacity 0.15s; }
+    .dl-btn:hover { opacity: 0.9; }
+    .copy-btn2 { width: 100%; padding: 9px; background: none; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13.5px; cursor: pointer; color: var(--brand-dark); }
+    .back-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); cursor: pointer; margin-top: 18px; }
+    .back-link:hover { color: var(--brand-dark); }
+    .export-preview { flex: 1; display: flex; flex-direction: column; padding: 22px; overflow: hidden; }
+    .eval-bar { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 9px 14px; font-size: 12.5px; color: #166534; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .json-container { flex: 1; background: var(--brand-dark); border-radius: 10px; overflow: auto; padding: 18px; }
+    .json-pre { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.65; color: #E2E8F0; white-space: pre; }
+    .jk { color: #93C5FD; } .js { color: #86EFAC; } .jn { color: #FCD34D; } .jb { color: #F9A8D4; } .jl { color: #9CA3AF; }
+
+    /* TOAST */
+    .toast-wrap { position: fixed; bottom: 22px; right: 22px; display: flex; flex-direction: column; gap: 7px; z-index: 9999; }
+    .toast { background: var(--card); border-radius: 10px; padding: 11px 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.14); display: flex; align-items: center; gap: 9px; font-size: 13.5px; min-width: 220px; animation: toastin 0.25s ease; }
+    @keyframes toastin { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+    .toast-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .toast-success .toast-dot { background: var(--success); }
+    .toast-error   .toast-dot { background: var(--error); }
+    .toast-info    .toast-dot { background: #3B82F6; }
+    .toast-warning .toast-dot { background: var(--warning); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 900px) {
+      #screen2 { flex-direction: column; }
+      .review-panels { flex-direction: column; }
+      .answers-panel { flex: none; max-height: 55%; }
+      .review-side { flex: none; border-left: none; border-top: 1px solid var(--border); }
+      #screen4 { flex-direction: column; }
+      .export-opts { flex: none; border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="global-top-bar">
+    <div class="logo"><div class="logo-icon">🛡</div>Helios RFP Agent</div>
+    <nav class="step-indicator" id="stepNav">
+      <div class="step active" id="sn1" onclick="navToStep(1)"><div class="step-num">1</div>Input</div>
+      <span class="step-sep">›</span>
+      <div class="step" id="sn2" onclick="navToStep(2)"><div class="step-num">2</div>Processing</div>
+      <span class="step-sep">›</span>
+      <div class="step" id="sn3" onclick="navToStep(3)"><div class="step-num">3</div>Review</div>
+      <span class="step-sep">›</span>
+      <div class="step" id="sn4" onclick="navToStep(4)"><div class="step-num">4</div>Export</div>
+    </nav>
+    <div class="user-avatar">AV</div>
+  </header>
+
+  <main class="main-content">
+    <!-- SCREEN 1 -->
+    <div class="screen active" id="screen1">
+      <div class="input-card">
+        <h1 class="hero-heading">Draft your RFP response in minutes</h1>
+        <p class="hero-sub">Paste questions below or upload a CSV — any format works</p>
+        <div class="tab-switcher">
+          <button class="tab-btn active" onclick="switchTab('paste',this)">Paste text</button>
+          <button class="tab-btn"        onclick="switchTab('upload',this)">Upload CSV</button>
+        </div>
+        <div class="tab-content active" id="tab-paste">
+          <textarea class="rfp-textarea" id="rfpInput"
+            placeholder='Supports multiple formats:&#10;&#10;  Q1 | technical | Your question here...&#10;&#10;  "Your question in quotes"&#10;&#10;  1. Your numbered question'
+            oninput="detectQuestions()"></textarea>
+        </div>
+        <div class="tab-content" id="tab-upload">
+          <div class="csv-drop-zone" onclick="document.getElementById('fileInput').click()">
+            <div class="drop-icon">📋</div>
+            <p>Drop CSV here or click to browse</p>
+            <small>Format: Q_ID | Category | Question · Accepted: .csv, .txt</small>
+          </div>
+          <input type="file" id="fileInput" accept=".csv,.txt" style="display:none" onchange="handleFile(event)">
+        </div>
+        <div class="detection-row">
+          <span class="q-count-badge" id="qCountBadge">0 questions detected</span>
+          <div class="cat-chips" id="catChips"></div>
+        </div>
+        <button class="start-btn" id="startBtn" disabled onclick="startAgent()">Run Agent →</button>
+        <p class="footer-note">Powered by Claude claude-sonnet-4-20250514 &nbsp;·&nbsp; Knowledge base: 7 entries</p>
+      </div>
+    </div>
+
+    <!-- SCREEN 2 -->
+    <div class="screen" id="screen2">
+      <div class="log-panel">
+        <div class="log-header">
+          <div class="pulse-dot" id="pulseDot"></div>
+          <h3 id="logTitle">Agent running…</h3>
+        </div>
+        <div class="log-stream" id="logStream"></div>
+      </div>
+      <div class="progress-panel">
+        <div class="ring-wrap">
+          <div class="ring-container">
+            <svg class="ring-svg" width="112" height="112" viewBox="0 0 112 112">
+              <circle class="ring-bg"   cx="56" cy="56" r="48"/>
+              <circle class="ring-fill" id="ringFill" cx="56" cy="56" r="48"
+                stroke-dasharray="301.59" stroke-dashoffset="301.59"/>
+            </svg>
+            <div class="ring-label">
+              <div class="ring-count" id="ringCount">0</div>
+              <div class="ring-total" id="ringTotal">of ?</div>
+            </div>
+          </div>
+        </div>
+        <div class="proc-meta">
+          <div class="meta-cell"><div class="meta-val" id="metaKb">0</div><div class="meta-lbl">KB searches</div></div>
+          <div class="meta-cell"><div class="meta-val" id="metaEst">—</div><div class="meta-lbl">est. remaining</div></div>
+        </div>
+        <div class="q-status-list" id="qStatusList"></div>
+        <button class="cancel-btn" onclick="cancelAgent()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3 -->
+    <div class="screen" id="screen3">
+      <div class="review-top-bar">
+        <input class="rfp-name-input" id="rfpNameInput" value="Helios RFP Response">
+        <div class="stats-row">
+          <span id="qCountStat">— questions</span>
+          <span class="stats-sep">·</span>
+          <span id="evalStat">—</span>
+          <span class="stats-sep">·</span>
+          <span id="issueStat">—</span>
+        </div>
+        <div class="action-group">
+          <button class="btn-primary" onclick="gotoScreen(4)">Export JSON</button>
+          <button class="btn-outline" onclick="gotoScreen(1)">New Questions</button>
+          <button class="btn-icon" title="Print" onclick="window.print()">🖨</button>
+        </div>
+      </div>
+      <div class="review-panels">
+        <div class="answers-panel" id="answersPanel"></div>
+        <div class="review-side">
+          <div class="consistency-panel" id="consistencyPanel"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4 -->
+    <div class="screen" id="screen4">
+      <div class="export-opts">
+        <h2>Export Response Package</h2>
+        <div class="form-grp">
+          <label class="form-lbl">Export Format</label>
+          <div class="radio-grp">
+            <label class="radio-item"><input type="radio" name="fmt" value="json" checked> JSON</label>
+            <label class="radio-item"><input type="radio" name="fmt" value="csv"> CSV</label>
+            <label class="radio-item"><input type="radio" name="fmt" value="md"> Markdown</label>
+          </div>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">Include Fields</label>
+          <div class="check-grp">
+            <label class="check-item"><input type="checkbox" checked> Answers</label>
+            <label class="check-item"><input type="checkbox" checked> Sources</label>
+            <label class="check-item"><input type="checkbox" checked> Confidence</label>
+            <label class="check-item"><input type="checkbox" checked> Flags</label>
+            <label class="check-item"><input type="checkbox" checked> Review Report</label>
+            <label class="check-item"><input type="checkbox" checked> Metadata</label>
+          </div>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl">RFP Name</label>
+          <input class="export-name" id="exportName" value="Helios RFP Response">
+        </div>
+        <button class="dl-btn" onclick="downloadJSON()">⬇ Download rfp_output.json</button>
+        <button class="copy-btn2" onclick="copyJSON()">Copy to Clipboard</button>
+        <div class="back-link" onclick="gotoScreen(3)">← Back to Review Workspace</div>
+      </div>
+      <div class="export-preview">
+        <div class="eval-bar" id="evalBar">
+          <span>Evals:</span><strong id="evalPass">—</strong>
+          <span>·</span><strong id="evalFail">—</strong>
+          <span>·</span><span id="evalStatus">Processing…</span>
+        </div>
+        <div class="json-container"><pre class="json-pre" id="jsonPre"></pre></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Source Evidence Drawer -->
+<div class="source-drawer" id="sourceDrawer">
+  <div class="drawer-hdr">
+    <div class="drawer-title" id="drawerTitle">Source Document</div>
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   KNOWLEDGE BASE — client-side, for source evidence drawer
+══════════════════════════════════════════════════════════ */
+const KNOWLEDGE_BASE = {
+  "Helios Platform Architecture Doc v4.2": {
+    content: "Helios Sentinel uses a multi-layered detection engine combining signature-based matching, behavioral analysis, and ML-driven anomaly detection. Data sources include endpoint telemetry (process events, file system changes, network connections), cloud workload logs (AWS CloudTrail, Azure Activity Log, GCP Audit Log), network flow data (NetFlow v9/IPFIX), and email gateway events. Average detection-to-alert latency is 2.3 seconds for signature matches and 18 seconds for behavioral detections. Our SIEM correlation engine processes up to 50,000 events per second per tenant.",
+    tags: ["technical","detection","latency","architecture"]
+  },
+  "Acme Corp RFP Response — March 2024": {
+    content: "Q: Describe your real-time threat detection capabilities. A: Helios Sentinel provides sub-3-second detection for known threat patterns and under 20 seconds for behavioral anomalies. Detection engine ingests endpoint telemetry, network flows, cloud audit logs, and email events. SIEM correlation engine handles 50K EPS per tenant. 99.7% true positive rate on top 100 detection rules, validated quarterly against MITRE ATT&CK framework.",
+    tags: ["technical","detection","past-rfp"]
+  },
+  "Helios Compliance & Certifications Register 2025": {
+    content: "SOC 2 Type II (audited December 2024 by Deloitte), ISO 27001:2022 (certified March 2024 by BSI), FedRAMP Moderate (authorized June 2024, sponsored by DHS — Department of Homeland Security), HIPAA (BAA available, last assessment October 2024), PCI DSS v4.0 Level 1 Service Provider (validated September 2024 by Coalfire), StateRAMP (authorized January 2025). All certifications on continuous monitoring with quarterly internal audits.",
+    tags: ["compliance","certifications","audit","soc2","fedramp","dhs"]
+  },
+  "NovaTech RFP Response — July 2024": {
+    content: "Q: What compliance certifications do you hold? A: Helios holds SOC 2 Type II, ISO 27001, FedRAMP Moderate, PCI DSS v4.0, and HIPAA compliance. All actively maintained with continuous monitoring. Audit reports available on request under NDA. Security team of 14 full-time engineers manages compliance programs.",
+    tags: ["compliance","certifications","past-rfp"]
+  },
+  "Helios Commercial Pricing Sheet Q1 2025": {
+    content: "EPP+EDR bundle: 500 endpoints $18/seat/month ($108,000/year); 1,000 endpoints $15/seat/month ($180,000/year, 17% discount); 5,000 endpoints $11/seat/month ($660,000/year, 39% discount). Minimum contract: 12 months. Multi-year: 2yr +5%, 3yr +10%. SIEM add-on +$6/seat/month. MDR add-on +$12/seat/month. Pricing excludes professional services.",
+    tags: ["pricing","commercial","discount","contract"]
+  },
+  "Helios Customer Success — Vertical Report 2024": {
+    content: "47 customers in financial services: 12 banks, 8 insurance carriers, 15 asset management firms, 12 fintechs. Reference accounts: 1) Meridian National Bank — 3,200 endpoints, EPP+EDR+SIEM, since 2022. 2) Crestview Capital Partners — 850 endpoints, EPP+MDR, since 2023. 3) Apex Insurance Group — 5,100 endpoints, full platform, since 2021. Average NPS: 72.",
+    tags: ["company-info","customers","financial-services","references"]
+  },
+  "Helios Data Sovereignty & Privacy Whitepaper v3.1": {
+    content: "Full EU data residency: Frankfurt (AWS eu-central-1) and Dublin (AWS eu-west-1). Customer data never leaves selected region. Encryption at rest: AES-256-GCM with customer-managed keys (AWS KMS or BYOK). Encryption in transit: TLS 1.3 for all API/agent communications with certificate pinning. GDPR DPA included in all EU contracts. Annual third-party pen testing by NCC Group. Data retention: 90 days raw telemetry, 13 months aggregated alerts (configurable). No data processed/stored outside customer's selected region. Support access via dedicated secure portal with full audit logging.",
+    tags: ["technical","compliance","data-residency","eu","encryption","gdpr"]
+  }
+};
+
+/* ══════════════════════════════════════════════════════════
+   APP STATE
+══════════════════════════════════════════════════════════ */
+let parsedQuestions = [];
+let realAnswers     = [];
+let realReview      = null;
+let procDoneCount   = 0;
+let procKbCount     = 0;
+let procCompleted   = false;
+let currentES       = null;
+let dismissedIssues = new Set();
+let currentScreen   = 1;
+
+const DEFAULT_INPUT =
+`"What is your average detection-to-alert latency for signature-based versus behavioral threats, and what data sources feed your detection engine?"
+"List all compliance certifications Helios currently holds, and confirm whether a GDPR DPA is available for EU customers."
+"Describe your native Kubernetes runtime protection capabilities, including supported CNIs and admission-controller integration."
+"Please confirm that Helios does not process or store customer data outside the customer's selected region, and describe any exceptions for support or telemetry."
+"We noticed your Q2 response lists FedRAMP Moderate authorization. Can you confirm the exact sponsoring agency and whether this covers both your SaaS and air-gapped deployment models under the same authorization boundary?"`;
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('rfpInput').value = DEFAULT_INPUT;
+  detectQuestions();
+  gotoScreen(1);
+});
+
+/* ══════════════════════════════════════════════════════════
+   QUESTION PARSING
+══════════════════════════════════════════════════════════ */
+function detectCategory(text) {
+  const t = text.toLowerCase();
+  if (/certif|compliance|soc[\s-]?2|fedramp|hipaa|iso[\s-]?27|gdpr|dpa|audit|pci|stateramp/.test(t)) return 'compliance';
+  if (/pric|cost|\$\/seat|contract|discount|per.seat/.test(t))  return 'pricing';
+  if (/customer|reference account|vertical|client|nps|partner/.test(t)) return 'company-info';
+  return 'technical';
+}
+
+function parseQuestionsFromText(text) {
+  const qs = [];
+
+  // Format 1: pipe-separated  Q1 | category | text
+  const pipeLines = text.split('\n').filter(l => (l.match(/\|/g) || []).length >= 2);
+  if (pipeLines.length > 0) {
+    pipeLines.forEach((line, i) => {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 3) {
+        qs.push({ id: parts[0].replace(/\s/g,'') || `Q${i+1}`, category: parts[1].toLowerCase(), text: parts.slice(2).join('|').trim() });
+      }
+    });
+    if (qs.length) return qs;
+  }
+
+  // Format 2: quoted strings  "question text"
+  const quoted = [...text.matchAll(/"([^"]{20,})"/g)];
+  if (quoted.length) {
+    quoted.forEach((m, i) => {
+      const clean = m[1].replace(/\s+/g, ' ').trim();
+      qs.push({ id: `Q${i+1}`, category: detectCategory(clean), text: clean });
+    });
+    return qs;
+  }
+
+  // Format 3: numbered/bulleted lines
+  const skipRe = /^(\d+\.\s*(warm.up|compound|hallucination|negation|consistency|hard|medium|easy|curve|difficulty))/i;
+  text.split('\n').forEach(raw => {
+    const line = raw.trim().replace(/^[\d]+[.)]\s*/, '').replace(/^[-*•]\s*/, '').trim();
+    if (line.length < 20 || skipRe.test(raw.trim())) return;
+    qs.push({ id: `Q${qs.length+1}`, category: detectCategory(line), text: line });
+  });
+  return qs;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 1 — INPUT
+══════════════════════════════════════════════════════════ */
+function detectQuestions() {
+  const text = document.getElementById('rfpInput').value;
+  const qs   = parseQuestionsFromText(text);
+
+  document.getElementById('qCountBadge').textContent = qs.length + ' question' + (qs.length !== 1 ? 's' : '') + ' detected';
+  document.getElementById('startBtn').disabled = qs.length === 0;
+
+  const cats = {};
+  qs.forEach(q => { cats[q.category] = (cats[q.category] || 0) + 1; });
+
+  const wrap = document.getElementById('catChips');
+  wrap.innerHTML = '';
+  Object.entries(cats).forEach(([cat, n]) => {
+    const s = document.createElement('span');
+    s.className = `chip chip-${cat}`;
+    s.textContent = `${cat} ×${n}`;
+    wrap.appendChild(s);
+  });
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-paste').classList.toggle('active',  tab === 'paste');
+  document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+}
+
+function handleFile(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    document.getElementById('rfpInput').value = ev.target.result;
+    document.querySelectorAll('.tab-btn')[0].click();
+    detectQuestions();
+    toast('Loaded: ' + f.name, 'success');
+  };
+  r.readAsText(f);
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 2 — REAL AGENT PROCESSING
+══════════════════════════════════════════════════════════ */
+async function startAgent() {
+  const text = document.getElementById('rfpInput').value;
+  parsedQuestions = parseQuestionsFromText(text);
+  if (!parsedQuestions.length) return;
+
+  realAnswers = []; realReview = null; dismissedIssues = new Set();
+  procDoneCount = 0; procKbCount = 0; procCompleted = false;
+
+  gotoScreen(2);
+  resetProcUI();
+
+  try {
+    const resp = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questions: parsedQuestions })
+    });
+    if (!resp.ok) throw new Error('Server returned ' + resp.status);
+    const { job_id } = await resp.json();
+    subscribeToStream(job_id);
+  } catch (err) {
+    toast('Backend error: ' + err.message + ' — is rfp_server.py running?', 'error');
+    gotoScreen(1);
+  }
+}
+
+function subscribeToStream(job_id) {
+  if (currentES) currentES.close();
+  currentES = new EventSource(`/api/stream/${job_id}`);
+
+  currentES.onmessage = (e) => {
+    const ev = JSON.parse(e.data);
+    handleProcEvent(ev);
+  };
+
+  currentES.onerror = () => {
+    if (procCompleted) return;
+    toast('Stream disconnected', 'warning');
+  };
+}
+
+function handleProcEvent(ev) {
+  switch (ev.type) {
+    case 'start':
+      document.getElementById('ringTotal').textContent = 'of ' + ev.total;
+      break;
+
+    case 'question_start': {
+      addLog(ev.payload, 'c-grey');
+      const icon = document.getElementById('si-' + ev.question_id);
+      if (icon) icon.className = 'si si-running';
+      const timeEl = document.getElementById('qt-' + ev.question_id);
+      if (timeEl) timeEl.textContent = 'Processing…';
+      break;
+    }
+
+    case 'tool_call':
+      addLog(ev.payload, 'c-blue');
+      break;
+
+    case 'tool_result':
+      addLog(ev.payload, 'c-green');
+      procKbCount++;
+      document.getElementById('metaKb').textContent = procKbCount;
+      break;
+
+    case 'question_done': {
+      addLog(ev.payload, 'c-orange');
+      const icon = document.getElementById('si-' + ev.question_id);
+      if (icon) { icon.className = 'si si-done'; icon.textContent = '✓'; }
+      const timeEl = document.getElementById('qt-' + ev.question_id);
+      if (timeEl) timeEl.textContent = 'Done — ' + (ev.answer.confidence || '?');
+      realAnswers.push(ev.answer);
+      procDoneCount++;
+      updateRing(procDoneCount);
+      const rem = (parsedQuestions.length - procDoneCount) * 12;
+      document.getElementById('metaEst').textContent = rem > 0 ? '~' + rem + 's' : '~0s';
+      break;
+    }
+
+    case 'review_start':
+      addLog(ev.payload, 'c-blue');
+      break;
+
+    case 'review_done':
+      addLog(ev.payload, 'c-orange');
+      realReview = ev.review;
+      break;
+
+    case 'complete':
+      addLog(ev.payload, 'c-green');
+      realAnswers = ev.answers || realAnswers;
+      realReview  = ev.review  || realReview;
+      procCompleted = true;
+      document.getElementById('logTitle').textContent = 'Agent complete ✓';
+      const dot = document.getElementById('pulseDot');
+      dot.style.background = 'var(--success)'; dot.style.animation = 'none';
+      if (currentES) { currentES.close(); currentES = null; }
+      setTimeout(() => { gotoScreen(3); toast('All ' + parsedQuestions.length + ' questions answered', 'success'); }, 800);
+      break;
+  }
+}
+
+function resetProcUI() {
+  document.getElementById('logStream').innerHTML = '';
+  document.getElementById('logTitle').textContent = 'Agent running…';
+  document.getElementById('ringCount').textContent = '0';
+  document.getElementById('ringTotal').textContent = 'of ' + parsedQuestions.length;
+  document.getElementById('metaKb').textContent = '0';
+  document.getElementById('metaEst').textContent = '—';
+  const dot = document.getElementById('pulseDot');
+  dot.style.background = ''; dot.style.animation = '';
+  updateRing(0);
+  buildStatusList();
+}
+
+function buildStatusList() {
+  document.getElementById('qStatusList').innerHTML = parsedQuestions.map(q => `
+    <div class="q-status-row">
+      <div class="si si-pending" id="si-${q.id}"></div>
+      <div class="q-info">
+        <div class="q-info-id">${escHtml(q.id)} <span class="chip chip-${q.category}">${q.category}</span></div>
+        <div class="q-info-time" id="qt-${q.id}">${escHtml(q.text.slice(0,60))}…</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateRing(done) {
+  const total = parsedQuestions.length || 1;
+  const circ  = 301.59;
+  document.getElementById('ringFill').style.strokeDashoffset = circ - (done / total) * circ;
+  document.getElementById('ringCount').textContent = done;
+}
+
+function addLog(text, cls) {
+  const s = document.getElementById('logStream');
+  s.insertAdjacentHTML('beforeend', `<span class="log-line ${cls}">${escHtml(text)}</span>\n`);
+  s.scrollTop = s.scrollHeight;
+}
+
+function cancelAgent() {
+  if (currentES) { currentES.close(); currentES = null; }
+  gotoScreen(1);
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN NAVIGATION
+══════════════════════════════════════════════════════════ */
+function gotoScreen(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen' + n).classList.add('active');
+  currentScreen = n;
+  for (let i = 1; i <= 4; i++) {
+    const el  = document.getElementById('sn' + i);
+    const num = el.querySelector('.step-num');
+    el.classList.remove('active','done');
+    if (i < n)       { el.classList.add('done');   num.textContent = '✓'; }
+    else if (i === n){ el.classList.add('active'); num.textContent = i; }
+    else             { num.textContent = i; }
+  }
+  if (n === 3) renderReview();
+  if (n === 4) renderExport();
+}
+
+function navToStep(n) {
+  if (n < currentScreen || (n === 3 && procCompleted) || (n === 4 && procCompleted)) gotoScreen(n);
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 3 — REVIEW WORKSPACE
+══════════════════════════════════════════════════════════ */
+function renderReview() {
+  if (!realAnswers.length) {
+    document.getElementById('answersPanel').innerHTML = '<div style="padding:32px;text-align:center;color:var(--muted)">Run the agent to generate answers</div>';
+    document.getElementById('consistencyPanel').innerHTML = '';
+    return;
+  }
+  const rev = realReview || { status:'pass', issues:[], overall_assessment:'Review not available.' };
+
+  // Update top bar stats
+  const issueQs = new Set();
+  rev.issues.forEach(iss => iss.questions_involved.forEach(q => issueQs.add(q)));
+  const lowConf = realAnswers.filter(a => a.confidence === 'low').length;
+  const n = realAnswers.length;
+
+  document.getElementById('qCountStat').textContent = n + ' question' + (n !== 1 ? 's' : '');
+  document.getElementById('evalStat').style.color   = lowConf ? 'var(--warning)' : 'var(--success)';
+  document.getElementById('evalStat').textContent   = lowConf ? lowConf + ' low-confidence' : 'All high confidence';
+  document.getElementById('issueStat').style.color  = rev.issues.length ? 'var(--warning)' : 'var(--success)';
+  document.getElementById('issueStat').textContent  = rev.issues.length + ' consistency issue' + (rev.issues.length !== 1 ? 's' : '');
+
+  renderAnswerCards(issueQs);
+  renderConsistency(rev);
+}
+
+function chipHtml(cat) { return `<span class="chip chip-${cat}">${cat}</span>`; }
+
+function confDotsHtml(conf) {
+  const n = conf === 'high' ? 3 : conf === 'medium' ? 2 : 1;
+  return Array.from({length:3}, (_,i) => `<div class="conf-dot ${i < n ? 'on ' + conf : ''}"></div>`).join('');
+}
+
+function renderAnswerCards(issueQs) {
+  document.getElementById('answersPanel').innerHTML = realAnswers.map(ans => {
+    const q       = parsedQuestions.find(q => q.id === ans.question_id) || { text: '' };
+    const hasIss  = issueQs && issueQs.has(ans.question_id);
+    const hasFlags= ans.flags && ans.flags.length > 0;
+    const cls     = ['answer-card', hasFlags ? 'flagged' : '', hasIss ? 'has-issues' : ''].filter(Boolean).join(' ');
+
+    const sourcesHtml = (ans.sources || []).map(s =>
+      `<div class="source-pill" onclick="openDrawer(${JSON.stringify(s)})">📄 ${escHtml(s)}</div>`
+    ).join('');
+
+    const flagHtml = hasFlags
+      ? `<div class="flags-banner">⚠ ${escHtml(ans.flags[0])}</div>` : '';
+
+    return `<div class="${cls}" id="card-${ans.question_id}">
+      <div class="card-hdr">
+        <div class="card-hdr-l">
+          <span class="q-id">${escHtml(ans.question_id)}</span>
+          ${chipHtml(ans.category || 'technical')}
+        </div>
+        <div class="card-hdr-r">
+          <div class="conf-dots">${confDotsHtml(ans.confidence || 'low')}</div>
+          <span class="conf-label ${ans.confidence || 'low'}">${ans.confidence || 'low'}</span>
+          ${hasIss ? '<div class="issue-dot" title="Has consistency issues"></div>' : ''}
+        </div>
+      </div>
+      <div class="card-q">${escHtml(q.text)}</div>
+      <div class="card-divider"></div>
+      ${flagHtml}
+      <div class="card-answer" id="ab-${ans.question_id}">${nl2br(ans.answer || '')}</div>
+      <button class="show-more-btn" id="sm-${ans.question_id}" onclick="toggleExpand('${ans.question_id}')">Show more ▾</button>
+      <div class="edit-area" id="ea-${ans.question_id}">
+        <textarea class="edit-ta" id="et-${ans.question_id}">${escHtml(ans.answer || '')}</textarea>
+        <div class="edit-btns">
+          <button class="edit-save"   onclick="saveEdit('${ans.question_id}')">Save</button>
+          <button class="edit-cancel" onclick="cancelEdit('${ans.question_id}')">Cancel</button>
+        </div>
+      </div>
+      <div class="card-sources">
+        <div class="sources-lbl">Sources</div>
+        ${sourcesHtml || '<span style="font-size:12px;color:var(--muted)">No sources cited</span>'}
+      </div>
+      <div class="card-actions">
+        <button class="card-btn"        onclick="startEdit('${ans.question_id}')">Edit answer</button>
+        <button class="card-btn"        onclick="toast('Regenerate: re-run agent on this question','info')">Regenerate</button>
+        <button class="card-btn danger" onclick="flagCard('${ans.question_id}')">Flag for review</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExpand(id) {
+  const body = document.getElementById('ab-' + id);
+  const btn  = document.getElementById('sm-' + id);
+  body.classList.toggle('expanded');
+  btn.textContent = body.classList.contains('expanded') ? 'Show less ▴' : 'Show more ▾';
+}
+
+function startEdit(id) {
+  document.getElementById('card-' + id).classList.add('editing');
+  document.getElementById('ea-'   + id).classList.add('active');
+  document.getElementById('ab-'   + id).style.display = 'none';
+  document.getElementById('sm-'   + id).style.display = 'none';
+}
+
+function saveEdit(id) {
+  const val = document.getElementById('et-' + id).value;
+  const ans = realAnswers.find(a => a.question_id === id);
+  if (ans) ans.answer = val;
+  document.getElementById('ab-' + id).innerHTML = nl2br(val);
+  cancelEdit(id);
+  toast('Answer updated', 'success');
+}
+
+function cancelEdit(id) {
+  document.getElementById('card-' + id).classList.remove('editing');
+  document.getElementById('ea-'   + id).classList.remove('active');
+  document.getElementById('ab-'   + id).style.display = '';
+  document.getElementById('sm-'   + id).style.display = '';
+}
+
+function flagCard(id) {
+  document.getElementById('card-' + id).classList.toggle('flagged');
+  toast(id + ' flagged for review', 'info');
+}
+
+function scrollToCard(id) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.scrollIntoView({ behavior:'smooth', block:'start' });
+  card.classList.add('highlight');
+  setTimeout(() => card.classList.remove('highlight'), 2200);
+}
+
+function renderConsistency(rev) {
+  const active = rev.issues.filter((_,i) => !dismissedIssues.has(i));
+
+  const badgeHtml = active.length
+    ? `<span class="status-badge badge-issues">${active.length} issues</span>`
+    : `<span class="status-badge badge-pass">pass ✓</span>`;
+
+  const issuesHtml = rev.issues.map((iss, i) => {
+    if (dismissedIssues.has(i)) return '';
+    const goTo = iss.questions_involved.map(q =>
+      `<button class="goto-btn" onclick="scrollToCard('${q}')">Go to ${q}</button>`
+    ).join('');
+    return `<div class="issue-card" id="issue-${i}">
+      <div class="issue-hdr">
+        <span class="chip chip-${iss.type}">${iss.type.replace('_',' ')}</span>
+        <span class="involved">${iss.questions_involved.join(' · ')}</span>
+      </div>
+      <div class="issue-desc">${escHtml(iss.description)}</div>
+      <div class="issue-fix">💡 ${escHtml(iss.suggested_fix)}</div>
+      <div class="issue-acts">${goTo}<button class="dismiss-btn" onclick="dismissIssue(${i})">Dismiss</button></div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('consistencyPanel').innerHTML = `
+    <div class="panel-hdr">
+      <div class="panel-title">Consistency Review</div>
+      ${badgeHtml}
+    </div>
+    <div class="assessment-box">${escHtml(rev.overall_assessment || '—')}</div>
+    <div class="issues-list">
+      ${issuesHtml || '<div style="text-align:center;color:var(--success);padding:20px;font-size:13px">✓ No active issues</div>'}
+    </div>
+    <button class="rerun-btn" onclick="toast('Re-run: use New Questions to re-run with same text','info')">↺ Re-run consistency review</button>
+  `;
+
+  document.getElementById('issueStat').textContent  = active.length + ' consistency issue' + (active.length !== 1 ? 's' : '');
+}
+
+function dismissIssue(i) {
+  dismissedIssues.add(i);
+  renderConsistency(realReview || { status:'pass', issues:[], overall_assessment:'' });
+  toast('Issue dismissed', 'info');
+}
+
+/* ══════════════════════════════════════════════════════════
+   SOURCE EVIDENCE DRAWER
+══════════════════════════════════════════════════════════ */
+function openDrawer(name) {
+  const kb = KNOWLEDGE_BASE[name];
+  document.getElementById('drawerTitle').textContent = '📄 ' + name;
+
+  if (kb) {
+    const usedIn = realAnswers.filter(a => (a.sources||[]).includes(name)).map(a => a.question_id);
+    const usedLinks = usedIn.length
+      ? usedIn.map(q => `<span class="used-in-link" onclick="closeDrawer();scrollToCard('${q}')">${q}</span>`).join(', ')
+      : '<span style="color:var(--muted);font-size:12px">None</span>';
+    const tags = kb.tags.map(t => `<span class="chip chip-grey">${t}</span>`).join('');
+    document.getElementById('drawerBody').innerHTML = `
+      <div class="drawer-meta"><div class="drawer-lbl">Used in</div><div class="used-in-wrap">${usedLinks}</div></div>
+      <div class="drawer-meta"><div class="drawer-lbl">Tags</div><div class="drawer-tags">${tags}</div></div>
+      <div class="drawer-lbl" style="margin-bottom:8px">Source Content</div>
+      <div class="drawer-content">${escHtml(kb.content)}</div>`;
+  } else {
+    document.getElementById('drawerBody').innerHTML =
+      `<div class="drawer-content" style="color:var(--muted);font-style:italic">"${escHtml(name)}" is not in the local knowledge base — it may be a new source cited by the agent.</div>`;
+  }
+  document.getElementById('sourceDrawer').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('sourceDrawer').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCREEN 4 — EXPORT
+══════════════════════════════════════════════════════════ */
+function renderExport() {
+  const lowConf = realAnswers.filter(a => a.confidence === 'low').length;
+  const passed  = realAnswers.length - lowConf;
+  document.getElementById('evalPass').textContent   = passed + ' passed';
+  document.getElementById('evalFail').textContent   = lowConf + ' low-conf';
+  document.getElementById('evalStatus').textContent = lowConf === 0 ? '✓ All high confidence' : '⚠ Review flagged answers';
+  document.getElementById('jsonPre').innerHTML = syntaxHL(JSON.stringify(buildOutput(), null, 2));
+}
+
+function buildOutput() {
+  return {
+    rfp_name:        document.getElementById('rfpNameInput').value || 'Helios RFP Response',
+    total_questions: realAnswers.length,
+    answers:         realAnswers,
+    review:          realReview || { status:'pending', issues:[], overall_assessment:'Not yet run.' },
+    metadata:        { model:'claude-sonnet-4-20250514', knowledge_base_entries: Object.keys(KNOWLEDGE_BASE).length }
+  };
+}
+
+function syntaxHL(json) {
+  return escHtml(json).replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    m => {
+      let c = 'jn';
+      if (/^"/.test(m)) c = /:$/.test(m) ? 'jk' : 'js';
+      else if (/true|false/.test(m)) c = 'jb';
+      else if (/null/.test(m)) c = 'jl';
+      return `<span class="${c}">${m}</span>`;
+    }
+  );
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(buildOutput(), null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), {href:url, download:'rfp_output.json'}).click();
+  URL.revokeObjectURL(url);
+  toast('rfp_output.json downloaded', 'success');
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(JSON.stringify(buildOutput(), null, 2))
+    .then(()  => toast('Copied to clipboard', 'success'))
+    .catch(()  => toast('Copy failed — select manually', 'error'));
+}
+
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function nl2br(s) { return escHtml(s).replace(/\n/g,'<br>'); }
+
+function toast(msg, type='info') {
+  const wrap = document.getElementById('toastWrap');
+  const el   = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<div class="toast-dot"></div><span>${escHtml(msg)}</span>`;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.animation = 'toastin 0.25s reverse'; setTimeout(() => el.remove(), 250); }, 4000);
+}
+</script>
+</body>
+</html>

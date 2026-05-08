@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: helios-rfp-agent
+    env: python
+    rootDir: day2/04_agent-build-hackathon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python rfp_server.py
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
