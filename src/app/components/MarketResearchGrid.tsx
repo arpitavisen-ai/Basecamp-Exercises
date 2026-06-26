@@ -70,7 +70,7 @@ function RichTextEditor({
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
-  const lastValueRef = useRef(value);
+  const lastValueRef = useRef('__UNINITIALIZED__');
 
   useEffect(() => {
     if (editorRef.current && lastValueRef.current !== value) {
