@@ -115,12 +115,18 @@ function RichTextEditor({
       <style>{`
         .rich-editor ul { list-style: disc; padding-left: 1.4em; margin: 0.4em 0; }
         .rich-editor ol { list-style: decimal; padding-left: 1.4em; margin: 0.4em 0; }
-        .rich-editor h2 { font-size: 1.15em; font-weight: 700; margin: 0.6em 0 0.2em; color: #fff; }
-        .rich-editor h3 { font-size: 1em; font-weight: 600; margin: 0.5em 0 0.2em; color: #e2e8f0; }
-        .rich-editor p { margin: 0.25em 0; }
+        .rich-editor li { margin: 0.2em 0; }
+        .rich-editor h2 { font-size: 1.1em; font-weight: 700; margin: 1em 0 0.3em; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.3em; }
+        .rich-editor h3 { font-size: 0.95em; font-weight: 600; margin: 0.8em 0 0.2em; color: #e2e8f0; }
+        .rich-editor p { margin: 0.35em 0; }
         .rich-editor b, .rich-editor strong { color: #f1f5f9; }
         .rich-editor a { color: #60a5fa; text-decoration: underline; }
         .rich-editor:focus { outline: none; }
+        .rich-editor table { width: 100%; border-collapse: collapse; margin: 0.75em 0; font-size: 0.82em; }
+        .rich-editor th { background: rgba(255,255,255,0.07); color: #94a3b8; font-weight: 600; text-align: left; padding: 0.45em 0.7em; border: 1px solid rgba(255,255,255,0.08); font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.05em; }
+        .rich-editor td { padding: 0.4em 0.7em; border: 1px solid rgba(255,255,255,0.06); color: #cbd5e1; vertical-align: top; line-height: 1.5; }
+        .rich-editor tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+        .rich-editor blockquote { border-left: 3px solid #3b82f6; margin: 0.75em 0; padding: 0.6em 1em; background: rgba(59,130,246,0.06); color: #94a3b8; font-style: italic; border-radius: 0 6px 6px 0; }
       `}</style>
       {/* Toolbar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-white/10 bg-[#080F1E]/60 flex-wrap">

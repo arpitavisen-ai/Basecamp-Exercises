@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { Users, TrendingUp, ListChecks, Edit2, Check, Layers } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ref, get, set } from 'firebase/database';
+import { db } from './firebase';
 import { KanbanBoard } from './components/KanbanBoard';
 import { PersonaCard } from './components/PersonaCard';
 import { ProgressTracker } from './components/ProgressTracker';
 import { MarketResearchGrid } from './components/MarketResearchGrid';
 import { PDLCSection } from './components/PDLCSection';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
+import { SEED_VERSION, SEED_PROBLEM_STATEMENT, SEED_USER_SEGMENTS, SEED_MARKET_RESEARCH } from './data/seedData';
 
 export default function App() {
   const [problemStatement, setProblemStatement, flushProblemStatement] = useFirebaseSync(
@@ -55,6 +58,19 @@ export default function App() {
     { id: '6', title: 'Compliance & Security', description: 'Understand data protection requirements, security standards, and compliance obligations (GDPR, Cyber Essentials, NCSC guidelines) relevant to public sector platforms.' },
     { id: '7', title: 'Success Metrics Definition', description: 'Define how platform success will be measured and benchmarked in a public sector context, including adoption, efficiency gains, and outcome alignment.' },
   ]);
+
+  useEffect(() => {
+    const versionRef = ref(db, 'dataVersion');
+    get(versionRef).then(snapshot => {
+      const version = snapshot.exists() ? (snapshot.val() as number) : 0;
+      if (version < SEED_VERSION) {
+        set(ref(db, 'problemStatement'), JSON.stringify(SEED_PROBLEM_STATEMENT));
+        set(ref(db, 'userSegments'), JSON.stringify(SEED_USER_SEGMENTS));
+        set(ref(db, 'marketResearch'), JSON.stringify(SEED_MARKET_RESEARCH));
+        set(versionRef, SEED_VERSION);
+      }
+    });
+  }, []);
 
   const updateUserSegment = (segment: string, field: string, value: string) => {
     setUserSegments(prev => ({
