@@ -67,8 +67,8 @@ export default function App() {
     setMarketResearch(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  const addMarketResearch = () => {
-    setMarketResearch(prev => [...prev, { id: `mr-${Date.now()}`, title: '', description: '' }]);
+  const addMarketResearch = (data: { title: string; description: string; thumbnail?: string; report?: string; reportName?: string }) => {
+    setMarketResearch(prev => [...prev, { id: `mr-${Date.now()}`, ...data }]);
   };
 
   const deleteMarketResearch = (id: string) => {
@@ -198,7 +198,7 @@ export default function App() {
             <Tabs.List className="flex gap-0 border-b border-white/8 mb-10">
               {[
                 { value: 'users', label: 'User Analysis', Icon: Users },
-                { value: 'research', label: 'Market Research', Icon: TrendingUp },
+                { value: 'research', label: 'Artefacts', Icon: TrendingUp },
                 { value: 'pdlc', label: 'PDLC', Icon: Layers },
               { value: 'tasks', label: 'Tasks', Icon: ListChecks },
               ].map(({ value, label, Icon }) => (
