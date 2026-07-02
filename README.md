@@ -42,14 +42,15 @@ Every push and pull request triggers the pipeline in `.github/workflows/ci.yml`:
 Production is never updated if tests fail.
 
 ### Required GitHub Secrets
-https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
-Add these under **Settings → Secrets and variables → Actions**:
 
-| Secret | Value |
-|---|---|
-| `VERCEL_TOKEN` | Create at vercel.com → Account Settings → Tokens |
-| `VERCEL_ORG_ID` | `team_po7vlKOkbokM2AaiS5pxANXP` |
-| `VERCEL_PROJECT_ID` | `prj_1RJWubmmBe9GIdIKgxbF3mgGM70S` |
+Add these under **Settings → Secrets and variables → Actions**. Never commit tokens directly to the repository — always use GitHub Secrets or local config files that are git-ignored.
+
+| Secret | Purpose | Where to get it |
+|---|---|---|
+| `VERCEL_TOKEN` | Deploys previews and production | vercel.com → Account Settings → Tokens |
+| `VERCEL_ORG_ID` | Identifies the Vercel org | `team_po7vlKOkbokM2AaiS5pxANXP` |
+| `VERCEL_PROJECT_ID` | Identifies the Vercel project | `prj_1RJWubmmBe9GIdIKgxbF3mgGM70S` |
+| `ATLASSIAN_TOKEN` | Jira / Confluence API access | id.atlassian.com → Security → API tokens |
 
 ---
 
@@ -57,9 +58,11 @@ Add these under **Settings → Secrets and variables → Actions**:
 
 To enable the Figma MCP integration, generate a personal token at **figma.com → Account Settings → Personal access tokens** and add it to your local MCP config.
 
-> **Never commit Figma tokens to the repository.** Revoke and regenerate any token that has been pushed.
+> **Never commit tokens to the repository.** Revoke and regenerate any token that has been pushed.
 
-Figma Token = [set in local MCP config — never commit tokens]
+Store tokens locally only — never in source:
+- **Figma:** add to local MCP config (`~/.claude/mcp_config.json` or equivalent)
+- **Atlassian:** add as `ATLASSIAN_TOKEN` in GitHub Secrets (for CI) or a local `.env` file (git-ignored)
 
 ---
 

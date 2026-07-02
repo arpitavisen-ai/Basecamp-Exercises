@@ -53,10 +53,21 @@ Updated automatically as decisions are made, changed, or removed.
 
 ---
 
-### AD-06 · Vercel for hosting with CI/CD via GitHub Actions
+### AD-06 · All secrets stored in GitHub Secrets — never committed to the repository
+**Status:** Active  
+**Date:** 2026-07-02  
+**Decision:** No API tokens, credentials, or secrets are committed to the repository. All secrets required by CI/CD are stored in GitHub Actions Secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `ATLASSIAN_TOKEN`). Tokens needed locally only (Figma MCP) go in local config files that are never tracked by git.  
+**Rationale:** GitHub's secret scanning blocks pushes containing known token patterns — this was encountered in practice when a Figma token was accidentally committed to README.md and blocked the push entirely. Beyond the CI gate, committed tokens are permanent in git history even after deletion, and are visible to anyone with repo access.  
+**Incident:** Figma token (`figd_...`) and Atlassian token were committed to `README.md` in early commits. Both were removed, tokens revoked, and the push was unblocked via GitHub's secret scanning allow-list. The allow-list unblock should only ever be used for already-revoked tokens.  
+**Where to add secrets:** GitHub → repo → Settings → Secrets and variables → Actions. For local-only tokens, use a `.env` file covered by `.gitignore` or the tool's own local config (e.g. MCP config for Figma).
+
+---
+
+### AD-07 · Vercel for hosting with CI/CD via GitHub Actions
 **Status:** Active  
 **Decision:** Every push triggers a Vercel preview build; Playwright acceptance tests run against the preview URL; if tests pass and branch is `main`, the preview is promoted to production. Production is never updated if tests fail.  
-**Rationale:** Zero-downtime deployments, preview URLs per branch for review, and a hard gate preventing broken builds reaching production.
+**Rationale:** Zero-downtime deployments, preview URLs per branch for review, and a hard gate preventing broken builds reaching production.  
+**Two remotes in use:** `origin` → `github.com/arpvisen/...` (personal); `upstream` → `github.com/arpitavisen-ai/...` (work/AI account). Deployments are triggered from `upstream`.
 
 ---
 
@@ -184,5 +195,5 @@ Updated automatically as decisions are made, changed, or removed.
 
 ---
 
-*Last updated: 2026-07-02*  
+*Last updated: 2026-07-02 (added AD-06 secrets management, updated AD-07 with dual-remote note)*  
 *Update this file whenever a significant architectural, design, or coding decision is made, changed, or reversed.*
