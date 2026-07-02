@@ -1,14 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import {
   X, Target, Search, Rocket, BarChart2, Map, Users2, Lightbulb,
   FlaskConical, TestTube2, Cpu, ClipboardList, Palette, GitBranch,
   Code2, ShieldCheck, Megaphone, TrendingUp, ChevronRight, RotateCcw,
-  ArrowRight, Save, Plus, Trash2,
+  ArrowRight, Save, Plus, Trash2, Video, Play, Pencil,
 } from 'lucide-react';
 import { RichTextEditor, InlineEdit } from './RichTextEditor';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useFirebaseSync } from '../hooks/useFirebaseSync';
 
 // ─── Static config (icons & colours — never serialised) ─────────────────────
 
@@ -79,6 +79,7 @@ interface EditablePhase {
   title: string;
   subtitle: string;
   cards: EditableCard[];
+  videoUrl?: string;
 }
 
 const DEFAULT_PHASES: EditablePhase[] = [
@@ -98,13 +99,13 @@ const DEFAULT_PHASES: EditablePhase[] = [
   {
     id: 'discovery',
     title: 'Product Discovery',
-    subtitle: 'Validate assumptions before committing to build.',
+    subtitle: 'Validate assumptions for the MVP before committing to build.',
     cards: [
-      { id: 'pd-1', title: 'Market Research & Analysis', subtitle: 'User & market insights', description: 'Validate assumptions about user needs and market gaps through rigorous qualitative and quantitative research with real users.', bullets: ['Desk research & literature review', 'User interviews (15–20)', 'Surveys & quantitative data', 'Affinity mapping', 'Insight synthesis'] },
-      { id: 'pd-2', title: 'Brainstorming & Hypotheses', subtitle: 'Ideation & framing', description: 'Facilitate structured ideation sessions to generate and prioritise product hypotheses ready for testing.', bullets: ['Jobs-to-be-done framework', 'Problem framing workshops', 'HMW (How Might We) sessions', 'Hypothesis backlog creation', 'Opportunity scoring'] },
-      { id: 'pd-3', title: 'Rapid Prototyping', subtitle: 'Build to learn', description: 'Build low and mid-fidelity prototypes to test ideas quickly and cheaply before committing engineering resources.', bullets: ['Wireframe creation', 'Low-fidelity prototypes', 'Design sprint facilitation', 'Concept validation', 'Iteration cycles'] },
-      { id: 'pd-4', title: 'Rapid Testing', subtitle: 'Assumption validation', description: 'Conduct moderated and unmoderated user testing to validate prototypes and uncover usability issues before development begins.', bullets: ['Usability testing sessions', 'A/B testing', 'Think-aloud protocol', 'Insight capture & synthesis', 'Test-driven iteration'] },
-      { id: 'pd-5', title: 'Tech Discovery', subtitle: 'Feasibility & architecture', description: 'Evaluate technical options, integration feasibility, and high-level architecture requirements to de-risk delivery.', bullets: ['API & integration assessment', 'Build vs. buy analysis', 'Architecture decisions', 'Data & security requirements', 'Tooling evaluation (Jira, ADO, etc.)'] },
+      { id: 'pd-1', title: 'User Interviews', subtitle: 'Round 1 · NHS stakeholders', description: 'Conduct one round of structured user interviews with key NHS personas — Chief Nurses, Quality Managers, and Ward Managers — to validate the core problem, uncover unmet needs, and pressure-test MVP scope.', bullets: ['Recruit 6–9 participants across 3 NHS trusts', 'Semi-structured interview guide aligned to MVP scope', 'Focus on current feedback workflows and pain points', 'Capture verbatim quotes and key observations', 'Synthesise findings into insight themes'] },
+      { id: 'pd-2', title: 'Feedback Analysis', subtitle: 'Platform & dashboard scope', description: 'Analyse findings from user interviews and existing NHS FFT data to define what the MVP platform and dashboard must do. Keep scope tightly bounded to what is needed for the MVP demo — no gold-plating.', bullets: ['Affinity map interview insights', 'Identify top 3–5 critical jobs-to-be-done for MVP', 'Define must-have vs. out-of-scope platform features', 'Validate dashboard views against real user workflows', 'Document agreed MVP scope as a reference artefact'] },
+      { id: 'pd-3', title: 'Tech Discovery', subtitle: 'Feasibility & architecture', description: 'Evaluate technical options and integration feasibility scoped specifically to MVP delivery. Identify the minimum viable architecture needed to demonstrate the platform end-to-end.', bullets: ['NHS data ingestion approach (FFT, NHS App)', 'AI/NLP model selection for theme classification', 'Build vs. buy assessment for key components', 'Data security and IG requirements for MVP', 'High-level architecture decision record'] },
+      { id: 'pd-4', title: 'Ideation & Hypotheses', subtitle: 'Structured problem framing', description: 'Run focused ideation sessions to generate and prioritise product hypotheses for the MVP. Use HMW prompts and jobs-to-be-done to frame solvable problems, then score and rank hypotheses for testing.', bullets: ['HMW (How Might We) workshop', 'Jobs-to-be-done mapping', 'Hypothesis backlog creation', 'Opportunity scoring against MVP goals', 'Prioritised list of hypotheses to prototype'] },
+      { id: 'pd-5', title: 'Design Prototypes', subtitle: 'Lo-fi to mid-fi concepts', description: 'Translate the top MVP hypotheses into low and mid-fidelity design prototypes. Focus on the core dashboard and key user flows to gather early feedback before engineering begins.', bullets: ['Wireframes for core MVP screens', 'Mid-fidelity interactive prototype', 'Dashboard layout validation with users', 'Design critique and iteration cycle', 'Prototype sign-off ahead of delivery'] },
     ],
   },
   {
@@ -126,7 +127,7 @@ const DEFAULT_PHASES: EditablePhase[] = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function usePhases() {
-  const [phases, setPhases] = useLocalStorage<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
+  const [phases, setPhases] = useFirebaseSync<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
 
   const updatePhase = useCallback((phaseId: string, field: keyof EditablePhase, value: string) => {
     setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, [field]: value } : p));
@@ -194,20 +195,19 @@ function CardModal({
   return (
     <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50" />
+        <Dialog.Overlay className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50" />
         <Dialog.Content aria-describedby={undefined} className="fixed inset-0 flex items-center justify-center z-50 p-6 outline-none">
           <Dialog.Title className="sr-only">{card.title}</Dialog.Title>
           <div
-            className="w-full max-w-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
-            style={{ background: config.backBg }}
+            className="w-full max-w-xl rounded-2xl border border-slate-200 overflow-hidden shadow-2xl max-h-[90vh] flex flex-col bg-white"
           >
             {/* Header */}
             <div className={`px-7 pt-7 pb-5 bg-gradient-to-br ${config.frontAccent} flex-shrink-0`}>
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700">
                   {config.icon}
                 </div>
-                <Dialog.Close className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-colors">
+                <Dialog.Close className="w-8 h-8 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-300/80 transition-colors">
                   <X className="w-4 h-4" />
                 </Dialog.Close>
               </div>
@@ -220,7 +220,7 @@ function CardModal({
               <InlineEdit
                 value={card.title}
                 onChange={v => updateCard('title', v)}
-                className="text-xl font-semibold text-white block"
+                className="text-xl font-semibold text-slate-900 block"
                 placeholder="Card title…"
                 tag="h3"
               />
@@ -239,7 +239,7 @@ function CardModal({
                   html={card.description}
                   onChange={v => updateCard('description', v)}
                   placeholder="Add a description…"
-                  className="text-sm text-slate-300 leading-relaxed min-h-[60px]"
+                  className="text-sm text-slate-700 leading-relaxed min-h-[60px]"
                 />
               </div>
 
@@ -254,7 +254,7 @@ function CardModal({
                   {card.bullets.map((b, i) => (
                     <li key={i} className="flex items-center gap-2 group/bullet">
                       <span
-                        className="w-5 h-5 rounded-full bg-white/8 flex items-center justify-center text-[10px] text-slate-500 flex-shrink-0"
+                        className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 flex-shrink-0"
                         style={{ fontFamily: "'JetBrains Mono', monospace" }}
                       >
                         {String(i + 1).padStart(2, '0')}
@@ -263,7 +263,7 @@ function CardModal({
                         value={b}
                         onChange={e => updateBullet(i, e.target.value)}
                         placeholder={`Activity ${i + 1}…`}
-                        className="flex-1 bg-transparent text-sm text-slate-300 focus:outline-none border-b border-transparent focus:border-blue-500/40 transition-colors py-0.5"
+                        className="flex-1 bg-transparent text-sm text-slate-700 focus:outline-none border-b border-transparent focus:border-blue-500/40 transition-colors py-0.5"
                       />
                       <button
                         onClick={() => removeBullet(i)}
@@ -326,13 +326,13 @@ function FlipCard({
           {/* Front */}
           <div
             style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}
-            className={`rounded-xl border border-white/8 bg-gradient-to-br ${config.frontAccent} flex flex-col p-5 hover:border-white/15 transition-colors overflow-hidden`}
+            className={`rounded-xl border border-slate-200 bg-gradient-to-br ${config.frontAccent} flex flex-col p-5 hover:border-slate-300 transition-colors overflow-hidden`}
           >
             <div className="flex items-start justify-between mb-auto">
-              <div className="w-10 h-10 rounded-lg bg-white/8 flex items-center justify-center text-white/70 flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 flex-shrink-0">
                 {config.icon}
               </div>
-              <span className="flex items-center gap-1 text-[9px] text-white/25" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+              <span className="flex items-center gap-1 text-[9px] text-slate-400" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                 <RotateCcw className="w-2.5 h-2.5" /> flip
               </span>
             </div>
@@ -344,7 +344,7 @@ function FlipCard({
                 {card.subtitle || 'Tag'}
               </span>
               <p
-                className="text-sm font-semibold text-white leading-snug line-clamp-2"
+                className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 {card.title || 'Untitled'}
@@ -355,16 +355,16 @@ function FlipCard({
           {/* Back */}
           <div
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, background: config.backBg }}
-            className="rounded-xl border border-white/12 flex flex-col p-4 overflow-hidden"
+            className="rounded-xl border border-slate-200 bg-white flex flex-col p-4 overflow-hidden"
           >
             <p
-              className="text-[11px] text-slate-300 leading-relaxed mb-3 flex-1 line-clamp-3"
+              className="text-[11px] text-slate-700 leading-relaxed mb-3 flex-1 line-clamp-3"
               dangerouslySetInnerHTML={{ __html: card.description || '<em>No description yet</em>' }}
             />
             <ul className="space-y-1 mb-3">
               {card.bullets.slice(0, 3).map((b, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="w-1 h-1 rounded-full bg-white/30 flex-shrink-0" />
+                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-600">
+                  <span className="w-1 h-1 rounded-full bg-slate-400 flex-shrink-0" />
                   {b}
                 </li>
               ))}
@@ -392,6 +392,191 @@ function FlipCard({
   );
 }
 
+// ─── Phase video snippet ──────────────────────────────────────────────────────
+
+function getYouTubeEmbedId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/\s]+)/);
+  return m ? m[1] : null;
+}
+
+function PhaseVideoSnippet({
+  videoUrl, onUpdate, borderColor,
+}: {
+  videoUrl?: string;
+  onUpdate: (url: string) => void;
+  borderColor: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState(videoUrl ?? '');
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const ytId = videoUrl ? getYouTubeEmbedId(videoUrl) : null;
+  const isYoutube = !!ytId;
+  const isVideoFile = !!(videoUrl && !isYoutube);
+
+  useEffect(() => {
+    if (!videoRef.current) return;
+    if (playing) videoRef.current.play().catch(() => {});
+    else { videoRef.current.pause(); videoRef.current.currentTime = 0; }
+  }, [playing]);
+
+  // reset playback when video changes
+  useEffect(() => { setPlaying(false); }, [videoUrl]);
+
+  const commit = (url: string) => { onUpdate(url.trim()); setEditing(false); };
+  const clear = () => { onUpdate(''); setInputVal(''); setEditing(false); setPlaying(false); };
+
+  if (!videoUrl) {
+    return (
+      <div className="mt-6">
+        {editing ? (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-slate-300 bg-slate-50">
+            <Video className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <input
+              autoFocus
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value)}
+              placeholder="Paste a video URL (mp4 / YouTube)…"
+              className="flex-1 bg-transparent text-sm text-slate-700 focus:outline-none"
+              onKeyDown={e => {
+                if (e.key === 'Enter') commit(inputVal);
+                if (e.key === 'Escape') setEditing(false);
+              }}
+            />
+            <button onClick={() => commit(inputVal)} className="text-xs font-medium text-blue-500 hover:text-blue-400 transition-colors">Add</button>
+            <button onClick={() => setEditing(false)} className="text-xs text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditing(true)}
+            className="flex items-center justify-center gap-2 w-full text-xs text-slate-400 hover:text-slate-600 border border-dashed border-slate-200 hover:border-slate-400 px-4 py-3 rounded-xl transition-colors"
+          >
+            <Video className="w-3.5 h-3.5" />
+            Add video snippet
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6">
+      <div
+        className={`relative rounded-xl overflow-hidden border ${borderColor} bg-slate-900 group`}
+        style={{ aspectRatio: '16/9' }}
+      >
+        {/* mp4 / direct video */}
+        {isVideoFile && (
+          <>
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            {!playing && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <button
+                  data-testid="video-play-btn"
+                  onClick={() => setPlaying(true)}
+                  className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                >
+                  <Play className="w-6 h-6 ml-0.5" />
+                </button>
+              </div>
+            )}
+            {playing && (
+              <button
+                onClick={() => setPlaying(false)}
+                className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs transition-opacity"
+              >
+                Stop
+              </button>
+            )}
+          </>
+        )}
+
+        {/* YouTube */}
+        {isYoutube && (
+          <>
+            {!playing ? (
+              <>
+                <img
+                  src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`}
+                  alt="Video thumbnail"
+                  className="w-full h-full object-cover opacity-80"
+                />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <button
+                    data-testid="video-play-btn"
+                    onClick={() => setPlaying(true)}
+                    className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  >
+                    <Play className="w-7 h-7 ml-1" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&modestbranding=1&rel=0`}
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                />
+                <button
+                  onClick={() => setPlaying(false)}
+                  className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 px-3 py-1.5 rounded-lg bg-black/60 text-white text-xs transition-opacity z-10"
+                >
+                  Stop
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        {/* Remove */}
+        <button
+          onClick={clear}
+          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full bg-slate-900/80 flex items-center justify-center text-slate-300 hover:text-white transition-all z-20"
+          title="Remove video"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* Edit URL row */}
+      {editing ? (
+        <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50">
+          <input
+            autoFocus
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            className="flex-1 bg-transparent text-sm text-slate-700 focus:outline-none"
+            placeholder="New video URL…"
+            onKeyDown={e => {
+              if (e.key === 'Enter') commit(inputVal);
+              if (e.key === 'Escape') setEditing(false);
+            }}
+          />
+          <button onClick={() => commit(inputVal)} className="text-xs font-medium text-blue-500 hover:text-blue-400">Update</button>
+          <button onClick={() => setEditing(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancel</button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { setInputVal(videoUrl ?? ''); setEditing(true); }}
+          className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <Pencil className="w-3 h-3" /> Change video URL
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Phase section ────────────────────────────────────────────────────────────
 
 function PhaseSection({
@@ -409,7 +594,7 @@ function PhaseSection({
   return (
     <div>
       <div className={`flex items-start gap-5 p-6 rounded-2xl border ${config.borderColor} ${config.accentBg} mb-6`}>
-        <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center flex-shrink-0">
+        <div className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center flex-shrink-0">
           <span
             className={`text-lg font-bold tabular-nums ${config.accentColor}`}
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -421,14 +606,14 @@ function PhaseSection({
           <InlineEdit
             value={phase.title}
             onChange={v => updatePhase('title', v)}
-            className="text-xl font-semibold text-white mb-1 block"
+            className="text-xl font-semibold text-slate-900 mb-1 block"
             placeholder="Phase title…"
             tag="h3"
           />
           <InlineEdit
             value={phase.subtitle}
             onChange={v => updatePhase('subtitle', v)}
-            className="text-sm text-slate-400 block"
+            className="text-sm text-slate-600 block"
             placeholder="Phase subtitle…"
           />
         </div>
@@ -458,6 +643,12 @@ function PhaseSection({
           );
         })}
       </div>
+
+      <PhaseVideoSnippet
+        videoUrl={phase.videoUrl}
+        onUpdate={url => updatePhase('videoUrl' as keyof EditablePhase, url)}
+        borderColor={config.borderColor}
+      />
     </div>
   );
 }
@@ -489,12 +680,12 @@ export function PDLCSection() {
             End-to-end lifecycle
           </p>
           <h2
-            className="text-3xl font-semibold text-white mb-3"
+            className="text-3xl font-semibold text-slate-900 mb-3"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             Product Development Lifecycle
           </h2>
-          <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
+          <p className="text-slate-600 text-sm max-w-2xl leading-relaxed">
             Three interconnected phases. Click any card to flip it and explore key activities — flip it back or hit "Edit &amp; view all" to make changes.
           </p>
         </div>
@@ -520,15 +711,15 @@ export function PDLCSection() {
             <div key={pc.id} className="flex items-center flex-shrink-0">
               <div className={`flex items-center gap-3 px-5 py-3 rounded-xl border ${pc.borderColor} ${pc.accentBg}`}>
                 <span className={`text-xs font-bold tabular-nums ${pc.accentColor}`} style={{ fontFamily: "'JetBrains Mono', monospace" }}>{pc.number}</span>
-                <span className="text-sm font-semibold text-white whitespace-nowrap" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <span className="text-sm font-semibold text-slate-900 whitespace-nowrap" style={{ fontFamily: "'Playfair Display', serif" }}>
                   {phase?.title ?? ''}
                 </span>
                 <span className="text-xs text-slate-500">{phase?.cards.length ?? 0} activities</span>
               </div>
               {i < PHASE_CONFIG.length - 1 && (
                 <div className="flex items-center px-2">
-                  <div className="h-px w-8 bg-white/15" />
-                  <ArrowRight className="w-4 h-4 text-white/20 -ml-1" />
+                  <div className="h-px w-8 bg-slate-300" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 -ml-1" />
                 </div>
               )}
             </div>
@@ -537,7 +728,7 @@ export function PDLCSection() {
       </div>
 
       {/* Hint */}
-      <div className="flex items-center gap-2 mb-8 px-4 py-3 rounded-xl border border-white/6 bg-white/3 w-fit">
+      <div className="flex items-center gap-2 mb-8 px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 w-fit">
         <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
         <span className="text-xs text-slate-500">Click a card to flip · "Edit &amp; view all" on the back opens the rich text editor</span>
       </div>
@@ -560,11 +751,11 @@ export function PDLCSection() {
               />
               {i < PHASE_CONFIG.length - 1 && (
                 <div className="flex items-center justify-center mt-10 gap-3">
-                  <div className="h-px flex-1 bg-white/5" />
-                  <div className="flex items-center gap-2 text-[10px] text-slate-600 px-3" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <div className="flex items-center gap-2 text-[10px] text-slate-500 px-3" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                     <ArrowRight className="w-3 h-3" /> feeds into
                   </div>
-                  <div className="h-px flex-1 bg-white/5" />
+                  <div className="h-px flex-1 bg-slate-200" />
                 </div>
               )}
             </div>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { GripVertical, Plus, X, Tag } from 'lucide-react';
 import { EditableText } from './EditableText';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useFirebaseSync } from '../hooks/useFirebaseSync';
 
 interface Task {
   id: string;
@@ -68,7 +68,7 @@ function KanbanTask({
   return (
     <div
       ref={preview}
-      className={`bg-[#0C1828] rounded-xl border border-white/7 p-4 mb-2.5 transition-all duration-200 ${
+      className={`bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-2.5 transition-all duration-200 ${
         isDragging ? 'opacity-40 scale-95' : 'hover:border-blue-500/25 hover:shadow-lg hover:shadow-blue-900/10'
       }`}
       style={{ fontFamily: "'DM Sans', sans-serif" }}
@@ -81,7 +81,7 @@ function KanbanTask({
           <EditableText
             value={task.title}
             onChange={title => onUpdate({ ...task, title })}
-            className="text-sm font-medium text-slate-200 mb-1.5"
+            className="text-sm font-medium text-slate-700 mb-1.5"
             placeholder="Task title..."
           />
           {task.description && (
@@ -124,7 +124,7 @@ function KanbanTask({
                 <select
                   value={newLabel}
                   onChange={e => setNewLabel(e.target.value)}
-                  className="text-[10px] bg-[#080F1E] border border-white/15 text-slate-300 rounded px-2 py-0.5 focus:outline-none focus:border-blue-500/50"
+                  className="text-[10px] bg-white border border-slate-200 text-slate-700 rounded px-2 py-0.5 focus:outline-none focus:border-blue-500/50"
                   autoFocus
                 >
                   <option value="">Select...</option>
@@ -133,12 +133,12 @@ function KanbanTask({
                   ))}
                 </select>
                 <button onClick={() => addLabel(newLabel)} className="text-[10px] px-2 py-0.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors">Add</button>
-                <button onClick={() => { setShowLabelInput(false); setNewLabel(''); }} className="text-[10px] px-2 py-0.5 border border-white/15 text-slate-400 rounded hover:bg-white/5 transition-colors">✕</button>
+                <button onClick={() => { setShowLabelInput(false); setNewLabel(''); }} className="text-[10px] px-2 py-0.5 border border-slate-200 text-slate-500 rounded hover:bg-slate-100 transition-colors">✕</button>
               </div>
             ) : (
               <button
                 onClick={() => setShowLabelInput(true)}
-                className="flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] text-slate-600 hover:text-slate-400 border border-dashed border-white/10 hover:border-white/20 rounded transition-colors"
+                className="flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] text-slate-500 hover:text-slate-700 border border-dashed border-slate-300 hover:border-slate-400 rounded transition-colors"
               >
                 <Tag className="w-2.5 h-2.5" />
               </button>
@@ -179,7 +179,7 @@ function KanbanColumn({
     <div className="flex-shrink-0 w-72">
       <div
         className={`rounded-xl p-4 h-full flex flex-col transition-colors duration-200 border ${
-          isOver ? 'border-blue-500/40 bg-[#0F1A2E]/80' : 'border-white/6 bg-[#0D1829]'
+          isOver ? 'border-blue-500/40 bg-blue-50' : 'border-slate-200 bg-slate-50'
         }`}
       >
         <div className="flex items-center gap-2.5 mb-4">
@@ -187,11 +187,11 @@ function KanbanColumn({
           <EditableText
             value={column.title}
             onChange={title => onUpdateColumn(column.id, title)}
-            className="text-sm font-semibold text-slate-300 flex-1"
+            className="text-sm font-semibold text-slate-700 flex-1"
             placeholder="Column title..."
           />
           <span
-            className="text-[10px] text-slate-600 tabular-nums ml-auto"
+            className="text-[10px] text-slate-400 tabular-nums ml-auto"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
             {column.tasks.length}
@@ -210,7 +210,7 @@ function KanbanColumn({
             />
           ))}
           {column.tasks.length === 0 && !isOver && (
-            <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-white/8 text-[11px] text-slate-700">
+            <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-slate-300 text-[11px] text-slate-400">
               Drop tasks here
             </div>
           )}
@@ -218,7 +218,7 @@ function KanbanColumn({
 
         <button
           onClick={() => onAddTask(column.id)}
-          className="mt-3 flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-300 transition-colors py-1.5 px-1 rounded hover:bg-white/5"
+          className="mt-3 flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 transition-colors py-1.5 px-1 rounded hover:bg-slate-100"
         >
           <Plus className="w-3.5 h-3.5" />
           Add task
@@ -266,7 +266,7 @@ const initialColumns: Column[] = [
 ];
 
 export function KanbanBoard() {
-  const [columns, setColumns] = useLocalStorage<Column[]>("kanbanColumns", initialColumns);
+  const [columns, setColumns] = useFirebaseSync<Column[]>("kanbanColumns", initialColumns);
 
   const handleMoveTask = (taskId: string, fromId: string, toId: string, toIndex: number) => {
     if (fromId === toId) return;

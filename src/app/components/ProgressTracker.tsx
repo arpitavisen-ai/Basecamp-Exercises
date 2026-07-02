@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { Calendar, Edit2, Check } from 'lucide-react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useFirebaseSync } from '../hooks/useFirebaseSync';
 
 const MILESTONES = [
   { pct: 0, label: 'Kickoff' },
@@ -11,9 +11,9 @@ const MILESTONES = [
 ];
 
 export function ProgressTracker() {
-  const [progress, setProgress] = useLocalStorage("projectProgress", 25);
+  const [progress, setProgress] = useFirebaseSync("projectProgress", 25);
   const [isDragging, setIsDragging] = useState(false);
-  const [targetDate, setTargetDate] = useLocalStorage("targetDate", '16th June');
+  const [targetDate, setTargetDate] = useFirebaseSync("targetDate", '16th June');
   const [editingDate, setEditingDate] = useState(false);
   const [tempDate, setTempDate] = useState(targetDate);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -36,9 +36,8 @@ export function ProgressTracker() {
 
   return (
     <div
-      className="rounded-2xl border border-white/8 overflow-hidden"
+      className="rounded-2xl border border-slate-200 overflow-hidden bg-white"
       style={{
-        background: 'linear-gradient(135deg, #0F1A2E 0%, #111D32 100%)',
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -53,7 +52,7 @@ export function ProgressTracker() {
             </p>
             <div className="flex items-baseline gap-3">
               <span
-                className="text-5xl font-light text-white tabular-nums"
+                className="text-5xl font-light text-slate-900 tabular-nums"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 {progress}%
@@ -61,12 +60,12 @@ export function ProgressTracker() {
               <span className="text-slate-500 text-sm">complete</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Phase: <span className="text-slate-300">{activeMilestone.label}</span>
+              Phase: <span className="text-slate-700">{activeMilestone.label}</span>
               &nbsp;·&nbsp;{100 - progress}% remaining
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 bg-[#0A1628] px-4 py-2.5 rounded-xl border border-white/8">
+          <div className="flex items-center gap-2.5 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
             <Calendar className="w-4 h-4 text-slate-500 flex-shrink-0" />
             <span
               className="text-[10px] uppercase tracking-widest text-slate-500"
@@ -80,13 +79,13 @@ export function ProgressTracker() {
                 onChange={e => setTempDate(e.target.value)}
                 onBlur={() => { setTargetDate(tempDate); setEditingDate(false); }}
                 onKeyDown={e => { if (e.key === 'Enter') { setTargetDate(tempDate); setEditingDate(false); } }}
-                className="text-sm font-medium text-white bg-transparent border-b border-blue-500/60 focus:outline-none w-28"
+                className="text-sm font-medium text-slate-900 bg-transparent border-b border-blue-500/60 focus:outline-none w-28"
                 autoFocus
               />
             ) : (
               <button
                 onClick={() => { setEditingDate(true); setTempDate(targetDate); }}
-                className="flex items-center gap-1.5 text-sm font-medium text-white hover:text-blue-300 transition-colors group"
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-900 hover:text-blue-600 transition-colors group"
               >
                 {targetDate}
                 <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
@@ -98,7 +97,7 @@ export function ProgressTracker() {
         <div className="relative mb-3">
           <div
             ref={trackRef}
-            className="relative h-2 bg-white/8 rounded-full cursor-pointer"
+            className="relative h-2 bg-slate-200 rounded-full cursor-pointer"
             onMouseMove={e => { if (isDragging) calculateProgress(e.clientX); }}
             onMouseUp={() => setIsDragging(false)}
             onMouseLeave={() => setIsDragging(false)}
@@ -141,15 +140,15 @@ export function ProgressTracker() {
             return (
               <div key={m.pct} className="flex flex-col items-center gap-1.5">
                 <div
-                  className={`w-1.5 h-1.5 rounded-full transition-colors ${active ? 'bg-blue-400' : 'bg-white/15'}`}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${active ? 'bg-blue-400' : 'bg-slate-300'}`}
                 />
                 <span
-                  className={`text-[9px] uppercase tracking-widest transition-colors ${active ? 'text-blue-400' : 'text-slate-600'}`}
+                  className={`text-[9px] uppercase tracking-widest transition-colors ${active ? 'text-blue-400' : 'text-slate-400'}`}
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   {m.label}
                 </span>
-                <span className={`text-[9px] tabular-nums transition-colors ${active ? 'text-slate-400' : 'text-slate-700'}`}>
+                <span className={`text-[9px] tabular-nums transition-colors ${active ? 'text-slate-600' : 'text-slate-400'}`}>
                   {m.pct}%
                 </span>
               </div>

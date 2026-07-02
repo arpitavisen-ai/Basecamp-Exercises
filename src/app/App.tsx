@@ -1,25 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Users, TrendingUp, ListChecks, Edit2, Check, Layers } from 'lucide-react';
+import { Users, TrendingUp, ListChecks, Edit2, Check, Layers, Upload } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ref, get, set } from 'firebase/database';
+import { db } from './firebase';
 import { KanbanBoard } from './components/KanbanBoard';
 import { PersonaCard } from './components/PersonaCard';
 import { ProgressTracker } from './components/ProgressTracker';
 import { MarketResearchGrid } from './components/MarketResearchGrid';
 import { PDLCSection } from './components/PDLCSection';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { NHSFFTUpload } from './components/NHSFFTUpload';
+import { useFirebaseSync } from './hooks/useFirebaseSync';
+import { SEED_VERSION, SEED_PROBLEM_STATEMENT, SEED_USER_SEGMENTS, SEED_MARKET_RESEARCH } from './data/seedData';
+import type { FFTRecord } from './utils/fftParser';
+import { toast } from 'sonner';
 
 export default function App() {
-  const [problemStatement, setProblemStatement] = useLocalStorage(
+  const [problemStatement, setProblemStatement, flushProblemStatement] = useFirebaseSync(
     "problemStatement",
     "NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards."
   );
   const [editingStatement, setEditingStatement] = useState(false);
   const [tempStatement, setTempStatement] = useState(problemStatement);
 
-  const [userSegments, setUserSegments] = useLocalStorage("userSegments", {
+  const [userSegments, setUserSegments, flushUserSegments] = useFirebaseSync("userSegments", {
     chiefNurse: {
       title: "Chief Nurse",
       imageUrl: "https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxOSFMlMjBudXJzZSUyMGNsaW5pY2FsJTIwbGVhZGVyJTIwaG9zcGl0YWx8ZW58MXx8fHwxNzgyMzk2NzM3fDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -46,7 +52,7 @@ export default function App() {
     }
   });
 
-  const [marketResearch, setMarketResearch] = useLocalStorage("marketResearch", [
+  const [marketResearch, setMarketResearch, flushMarketResearch] = useFirebaseSync("marketResearch", [
     { id: '1', title: 'Competitive Analysis', description: 'Analyse existing product intelligence platforms in private sector and international public sector organisations to understand the landscape and identify differentiation opportunities.' },
     { id: '2', title: 'Current State Assessment', description: 'Map existing tools and systems used across UK public sector for product reporting and performance tracking, identifying gaps and integration opportunities.' },
     { id: '3', title: 'User Research', description: 'Conduct interviews and surveys with 15–20 product leaders, PMs, and senior stakeholders across 5–7 departments to surface unmet needs and latent demand.' },
@@ -55,6 +61,21 @@ export default function App() {
     { id: '6', title: 'Compliance & Security', description: 'Understand data protection requirements, security standards, and compliance obligations (GDPR, Cyber Essentials, NCSC guidelines) relevant to public sector platforms.' },
     { id: '7', title: 'Success Metrics Definition', description: 'Define how platform success will be measured and benchmarked in a public sector context, including adoption, efficiency gains, and outcome alignment.' },
   ]);
+
+  const [fftRecords, setFFTRecords, flushFFTRecords] = useFirebaseSync<FFTRecord[]>("fftRecords", []);
+
+  useEffect(() => {
+    const versionRef = ref(db, 'dataVersion');
+    get(versionRef).then(snapshot => {
+      const version = snapshot.exists() ? (snapshot.val() as number) : 0;
+      if (version < SEED_VERSION) {
+        set(ref(db, 'problemStatement'), JSON.stringify(SEED_PROBLEM_STATEMENT));
+        set(ref(db, 'userSegments'), JSON.stringify(SEED_USER_SEGMENTS));
+        set(ref(db, 'marketResearch'), JSON.stringify(SEED_MARKET_RESEARCH));
+        set(versionRef, SEED_VERSION);
+      }
+    });
+  }, []);
 
   const updateUserSegment = (segment: string, field: string, value: string) => {
     setUserSegments(prev => ({
@@ -67,23 +88,50 @@ export default function App() {
     setMarketResearch(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  const addMarketResearch = () => {
-    setMarketResearch(prev => [...prev, { id: `mr-${Date.now()}`, title: '', description: '' }]);
+  const addMarketResearch = (data: { title: string; description: string; thumbnail?: string; report?: string; reportName?: string }) => {
+    setMarketResearch(prev => [...prev, { id: `mr-${Date.now()}`, ...data }]);
   };
 
   const deleteMarketResearch = (id: string) => {
     setMarketResearch(prev => prev.filter(item => item.id !== id));
   };
 
+  const handleFFTImport = (records: FFTRecord[]) => {
+    setFFTRecords(prev => {
+      // Filter out duplicates from existing records
+      const existingKeys = new Set(
+        prev.map(r => `${r.trustCode}|${r.wardCode}|${r.responseDate}|${r.overallExperience}|${r.comments || ''}`)
+      );
+      
+      const newRecords = records.filter(r => {
+        const key = `${r.trustCode}|${r.wardCode}|${r.responseDate}|${r.overallExperience}|${r.comments || ''}`;
+        return !existingKeys.has(key);
+      });
+
+      if (newRecords.length > 0) {
+        toast.success(`Imported ${newRecords.length} NHS FFT records`, {
+          description: `${records.length - newRecords.length} duplicates skipped`
+        });
+        return [...prev, ...newRecords];
+      } else {
+        toast.info('No new records to import', {
+          description: 'All records already exist in the database'
+        });
+        return prev;
+      }
+    });
+    flushFFTRecords();
+  };
+
   return (
     <DndProvider backend={HTML5Backend}>
-      <Toaster theme="dark" position="bottom-right" richColors />
+      <Toaster theme="light" position="bottom-right" richColors />
       <div
-        className="min-h-screen bg-background"
+        className="min-h-screen bg-white"
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
         {/* Top bar */}
-        <header className="border-b border-white/7 bg-[#080F1E]">
+        <header className="border-b border-slate-200 bg-white">
           <div className="max-w-[1400px] mx-auto px-8 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
@@ -92,7 +140,7 @@ export default function App() {
                 </svg>
               </div>
               <span
-                className="text-sm font-semibold text-white tracking-tight"
+                className="text-sm font-semibold text-slate-900 tracking-tight"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 Patient Feedback Intelligence Platform
@@ -121,12 +169,12 @@ export default function App() {
                 Strategic Initiative
               </p>
               <h1
-                className="text-5xl font-semibold text-white leading-tight mb-6"
+                className="text-5xl font-semibold text-slate-900 leading-tight mb-6"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 Product Intelligence
                 <br />
-                <em className="font-normal text-slate-400">for the NHS</em>
+                <em className="font-normal text-slate-600">for the NHS</em>
               </h1>
               <div className="relative group">
                 <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/40 rounded-full" />
@@ -137,7 +185,7 @@ export default function App() {
                       onChange={e => setTempStatement(e.target.value)}
                       onBlur={() => { setProblemStatement(tempStatement); setEditingStatement(false); }}
                       rows={5}
-                      className="w-full bg-[#0F1A2E] border border-blue-500/40 rounded-xl px-4 py-3 text-sm text-slate-300 leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
                       autoFocus
                     />
                     <button
@@ -152,8 +200,8 @@ export default function App() {
                     className="pl-5 cursor-pointer"
                     onClick={() => { setEditingStatement(true); setTempStatement(problemStatement); }}
                   >
-                    <p className="text-slate-400 leading-relaxed text-sm max-w-2xl">{problemStatement}</p>
-                    <button className="mt-2 flex items-center gap-1 text-[11px] text-slate-600 hover:text-slate-400 transition-colors opacity-0 group-hover:opacity-100">
+                    <p className="text-slate-600 leading-relaxed text-sm max-w-2xl">{problemStatement}</p>
+                    <button className="mt-2 flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-700 transition-colors opacity-0 group-hover:opacity-100">
                       <Edit2 className="w-3 h-3" /> Edit statement
                     </button>
                   </div>
@@ -171,7 +219,7 @@ export default function App() {
               ].map(stat => (
                 <div
                   key={stat.label}
-                  className="bg-[#0F1A2E] rounded-xl border border-white/7 px-4 py-4"
+                  className="bg-slate-50 rounded-xl border border-slate-200 px-4 py-4"
                 >
                   <p
                     className="text-[9px] uppercase tracking-[0.15em] text-slate-500 mb-1"
@@ -180,7 +228,7 @@ export default function App() {
                     {stat.label}
                   </p>
                   <p
-                    className="text-2xl font-semibold text-white mb-0.5"
+                    className="text-2xl font-semibold text-slate-900 mb-0.5"
                     style={{ fontFamily: "'Playfair Display', serif" }}
                   >
                     {stat.value}
@@ -194,24 +242,42 @@ export default function App() {
 
         {/* Tabs */}
         <div className="max-w-[1400px] mx-auto px-8 pb-16">
-          <Tabs.Root defaultValue="users">
-            <Tabs.List className="flex gap-0 border-b border-white/8 mb-10">
+          <Tabs.Root defaultValue="ingest">
+            <Tabs.List className="flex gap-0 border-b border-slate-200 mb-10">
               {[
+                { value: 'ingest', label: 'Ingest', Icon: Upload },
                 { value: 'users', label: 'User Analysis', Icon: Users },
-                { value: 'research', label: 'Market Research', Icon: TrendingUp },
+                { value: 'research', label: 'Artefacts', Icon: TrendingUp },
                 { value: 'pdlc', label: 'PDLC', Icon: Layers },
-              { value: 'tasks', label: 'Tasks', Icon: ListChecks },
+                { value: 'tasks', label: 'Tasks', Icon: ListChecks },
               ].map(({ value, label, Icon }) => (
                 <Tabs.Trigger
                   key={value}
                   value={value}
-                  className="flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-200 transition-colors data-[state=active]:text-white data-[state=active]:border-blue-500"
+                  className="flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-slate-500 border-b-2 border-transparent hover:text-slate-700 transition-colors data-[state=active]:text-blue-600 data-[state=active]:border-blue-600"
                 >
                   <Icon className="w-4 h-4" />
                   {label}
                 </Tabs.Trigger>
               ))}
             </Tabs.List>
+
+            {/* NHS FFT Data Ingest */}
+            <Tabs.Content value="ingest">
+              <NHSFFTUpload onImport={handleFFTImport} />
+              
+              {/* Display record count */}
+              {fftRecords.length > 0 && (
+                <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900">
+                    📊 Total NHS FFT Records in Database: <strong>{fftRecords.length}</strong>
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Covering {new Set(fftRecords.map(r => r.trustCode)).size} trusts across {new Set(fftRecords.map(r => r.wardCode)).size} wards
+                  </p>
+                </div>
+              )}
+            </Tabs.Content>
 
             {/* User Analysis */}
             <Tabs.Content value="users">
@@ -223,7 +289,7 @@ export default function App() {
                   Click any persona to explore in depth
                 </p>
                 <h2
-                  className="text-2xl font-semibold text-white"
+                  className="text-2xl font-semibold text-slate-900"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
                   User Personas
@@ -252,6 +318,11 @@ export default function App() {
                 onUpdate={updateMarketResearch}
                 onDelete={deleteMarketResearch}
                 onAdd={addMarketResearch}
+                onSave={() => {
+                  flushProblemStatement();
+                  flushUserSegments();
+                  flushMarketResearch();
+                }}
               />
             </Tabs.Content>
 
@@ -271,7 +342,7 @@ export default function App() {
                     Drag tasks between columns to update status
                   </p>
                   <h2
-                    className="text-2xl font-semibold text-white"
+                    className="text-2xl font-semibold text-slate-900"
                     style={{ fontFamily: "'Playfair Display', serif" }}
                   >
                     Delivery Board

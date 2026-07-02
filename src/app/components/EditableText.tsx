@@ -69,7 +69,7 @@ export function EditableText({
         setIsEditing(true);
         setTempValue(value);
       }}
-      className={`${className} cursor-pointer hover:bg-white/5 rounded px-2 py-1 transition-colors ${!value ? 'opacity-40' : ''}`}
+      className={`${className} cursor-pointer hover:bg-slate-100 rounded px-2 py-1 transition-colors ${!value ? 'opacity-40' : ''}`}
     >
       {value || placeholder}
     </div>
