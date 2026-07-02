@@ -204,5 +204,5 @@ Updated automatically as decisions are made, changed, or removed.
 
 ---
 
-*Last updated: 2026-07-03 (removed Ingest tab and all FFT upload code — out of MVP demo scope; personas and JTBD canvases updated)*  
+*Last updated: 2026-07-03 (added user interview scripts artefact; SEED_VERSION bumped to 6)*  
 *Update this file whenever a significant architectural, design, or coding decision is made, changed, or reversed.*

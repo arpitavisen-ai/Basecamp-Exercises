@@ -1,4 +1,4 @@
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 export const SEED_PROBLEM_STATEMENT = `NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards.`;
 
@@ -456,6 +456,94 @@ export const SEED_MARKET_RESEARCH = [
 <li>Begin G-Cloud application process. Takes 4–8 weeks — start now, not after first contract closes.</li>
 <li>Prepare Finance Director ROI pack: staff hours saved + CQC inadequate rating cost avoidance + 10YHP compliance framing.</li>
 </ol>`)
+  },
+  {
+    id: 'artefact-interview-scripts',
+    title: 'User Interview Scripts — Round 1',
+    description: 'Five-question interview scripts with persona responses for Chief Nurse, Quality Manager, and Ward Manager. Validates MVP scope and discovery assumptions.',
+    thumbnail: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&h=600&fit=crop&auto=format',
+    richContent: rich(`
+<h2>About These Interviews</h2>
+<p>These scripts were used in Round 1 of user discovery — five structured but conversational questions per persona. The goal was not to validate a solution, but to understand the real shape of the problem before anything was built. Responses are composites drawn from interviews conducted across three NHS trusts. All names are illustrative.</p>
+<p><em>Interviewer tone throughout: curious, unhurried, non-leading. We are here to listen, not to pitch.</em></p>
+
+<hr/>
+
+<h2>Interview 1 — Sarah, Chief Nurse / Director of Patient Experience</h2>
+<p><strong>Context:</strong> Sarah leads patient experience strategy for a large acute trust with 38 wards and approximately 600,000 patient contacts per year. She reports directly to the CEO and presents to the board quarterly. We met her at her trust offices, 45 minutes before a board subcommittee she needed to prepare for.</p>
+<p><em>"Thank you for making time today, Sarah — we know how stretched things are. We're trying to understand what life is actually like on your side before we make any assumptions about what might help. There are no right answers here."</em></p>
+
+<h3>Q1 · How do you currently find out when something is going wrong with patient experience on a particular ward?</h3>
+<blockquote>"Honestly? In the worst cases, from the local paper. Or a Freedom of Information request arrives and that's how I find out a complaint pattern existed. The formal route is the monthly quality and safety committee — but that's six, sometimes eight weeks behind. By then you're managing an aftermath, not a situation."</blockquote>
+<p><strong>What this validates:</strong> The feedback lag is real and the consequence of missing it is reputational, not just operational. The board meeting is a forcing function — Sarah needs intelligence before she walks in, not after.</p>
+
+<h3>Q2 · When you do receive patient feedback data, what does it look like and what do you do with it?</h3>
+<blockquote>"We get a quarterly summary from the quality team — usually a PowerPoint, maybe 12 slides. It has trust-level FFT scores, a few bar charts by division, and some manually selected verbatim quotes. It takes them about two days to put together. I scan it before the board meeting, flag anything that looks like a trend, and then ask the quality team to dig deeper. Which takes another week."</blockquote>
+<p><strong>What this validates:</strong> The board pack is manual, slow, and sampled. Sarah is not the one who should be producing it — and she knows it. An auto-generated PDF that replaces two days of quality team work lands directly on her core job.</p>
+
+<h3>Q3 · The 10 Year Health Plan ties trust income to patient ratings. Has that changed how your board talks about patient experience?</h3>
+<blockquote>"Yes and no. The board has always cared about CQC ratings — that's been the main driver. But the payment linkage has made the finance director much more interested in patient experience data than they used to be. Which is actually useful. It means when I ask for resource, there's a financial case that someone else is making for me now."</blockquote>
+<p><strong>What this validates:</strong> Compliance and CQC risk are the primary switch triggers — not 10YHP payments, which are still perceived as distant. Lead with compliance in the demo narrative.</p>
+
+<h3>Q4 · If you received an alert that a ward's patient sentiment had dropped significantly — what would you need to see in that alert to actually act on it?</h3>
+<blockquote>"I'd need to know which ward, obviously. But I'd also need to know why — not just 'sentiment is down 12 points.' Is it a staffing issue? A specific doctor? A facilities problem? If it just says 'worse,' I'll pass it to the quality team and wait. If it tells me the top theme is 'feeling dismissed by staff,' I can have a different conversation with the ward manager that afternoon."</blockquote>
+<p><strong>What this validates:</strong> Alerts need the driving theme to be actionable. A score change alone is insufficient. The MVP alert design — threshold + top theme + dashboard link — is exactly right.</p>
+
+<h3>Q5 · What would make you feel confident that a patient feedback platform was actually working — not just installed?</h3>
+<blockquote>"If I walked into a board meeting and the chair asked about patient experience on a particular ward — and I already knew the answer before they finished the question. That would tell me something had fundamentally changed. Right now, that never happens. I'm always in reactive mode."</blockquote>
+<p><strong>What this validates:</strong> The primary success metric for Sarah is proactive awareness — knowing before being asked. The 24-hour alert and board pack export together deliver this. This is the demo's closing line.</p>
+
+<hr/>
+
+<h2>Interview 2 — James, Quality Manager / Patient Experience Lead</h2>
+<p><strong>Context:</strong> James has worked in patient experience quality roles for nine years across two trusts. He manages a team of two and is responsible for FFT analysis, complaints coordination, and producing evidence for CQC inspections. We met him over a video call — he was visibly tired and mentioned he had just finished a quarterly FFT report.</p>
+<p><em>"Really appreciate you joining us, James — especially given the timing. We've heard from a few people that the quarterly report cycle is exhausting. We'd love to understand what that actually looks like from your side."</em></p>
+
+<h3>Q1 · Walk us through what your quarterly feedback cycle actually looks like — from the raw data arriving to something landing in front of the board.</h3>
+<blockquote>"So we export the FFT responses from the NHS portal — usually around 2,000 comments per quarter. I open them in Excel. I read each one and manually assign it to a theme category. Communication, environment, waiting times, clinical care, dignity and respect. That takes me about two days. Then I build the summary charts, write the narrative, and send it to the Chief Nurse. She has feedback, I revise it, and it goes to the board. Start to finish, about two and a half weeks."</blockquote>
+<p><strong>What this validates:</strong> The manual coding process is exactly as painful as assumed. Two days per quarter on a task that AI can do in seconds. The time-to-value case for AI classification is immediate and concrete.</p>
+
+<h3>Q2 · You mentioned you read each comment. Are you reading all of them, or is there some selection happening?</h3>
+<blockquote>"I try to read all of them but honestly — if we've had a particularly busy quarter — I'll do a proper read of maybe 60–70% and skim the rest. Sometimes I'll sample by ward rather than reading everything. Which I know is a problem. There have been times I've spotted something in month three of a quarter that was clearly visible in month one if I'd had time to look."</blockquote>
+<p><strong>What this validates:</strong> Sampling is a coping mechanism, not a methodology. Real issues are being missed. Processing 100% of comments is not a nice-to-have — it directly addresses a known gap James is already uncomfortable with.</p>
+
+<h3>Q3 · When you look at a dashboard that shows ward-level feedback — what makes it useful versus overwhelming?</h3>
+<blockquote>"The tools I've used before show every ward. There might be 30 wards all with slightly different scores and I'm supposed to figure out which one needs my attention. It becomes noise. What I actually want is someone to say — 'these three wards have moved the most in the wrong direction in the last four weeks.' Just those three. I can deal with three."</blockquote>
+<p><strong>What this validates:</strong> The top-3 deteriorating wards default is not a design preference — it is a direct articulation of what James needs. Alert fatigue from all-ward views is the primary adoption risk. This is discovery finding F3 confirmed verbatim.</p>
+
+<h3>Q4 · When you identify a theme — say 'communication' is flagging on a ward — what do you actually need to do next?</h3>
+<blockquote>"I need to show the ward manager something real. Not just 'communication is down.' I need to be able to say 'three patients this week said they were not told what their medication was for.' That specificity is what makes a ward manager listen. So I end up going back into the raw data and manually pulling out representative quotes. That takes another hour per ward."</blockquote>
+<p><strong>What this validates:</strong> The drilldown to verbatim comments is not a feature — it is a prerequisite for the quality manager to do their job. Alert → theme → verbatim in 3 clicks closes a loop that currently takes an hour per ward.</p>
+
+<h3>Q5 · CQC inspections — how much of your time goes into preparing patient experience evidence for those?</h3>
+<blockquote>"Last inspection, I spent three weeks pulling together evidence. Printing trend charts, selecting quotes, writing narratives about what we changed and why. It's the most stressful period of my year and most of the work is just assembly — gathering things that already exist. If I could generate that pack in an afternoon I'd cry with relief. Genuinely."</blockquote>
+<p><strong>What this validates:</strong> CQC evidence preparation is a significant pain point and a strong commercial hook. The board pack export — even in basic PDF form — has immediate and emotional value for James. This is the Quality Manager's 'killer feature' for the demo.</p>
+
+<hr/>
+
+<h2>Interview 3 — Priya, Ward Manager / Service Line Lead</h2>
+<p><strong>Context:</strong> Priya manages a 28-bed surgical ward and has been in her role for four years. She works four long shifts per week and manages a team of 22. We spoke to her at the end of her shift — she had 20 minutes. She was direct, practical, and refreshingly honest about what she will and will not do.</p>
+<p><em>"Thanks so much for sparing 20 minutes, Priya — we'll be quick and we genuinely want to hear what would actually work for someone in your position, not what sounds good in a meeting room."</em></p>
+
+<h3>Q1 · How do you currently receive patient feedback about your ward — and when does it arrive?</h3>
+<blockquote>"I get a quarterly email from the quality team with a PDF attached. It has a percentage — like '84% of patients on Ward 7 rated their experience as very good or good.' That's it. It arrives about six weeks after the end of the quarter. So I'm reading about what patients thought in January in mid-February. If something went wrong in January, it went wrong. There's nothing I can do about it now."</blockquote>
+<p><strong>What this validates:</strong> The 4–6 week feedback lag is confirmed. Aggregated percentage scores are meaningless at ward level. Real-time, theme-level feedback is the minimum viable improvement — not a premium feature.</p>
+
+<h3>Q2 · Have you ever tried logging into a trust system to look at patient feedback data yourself?</h3>
+<blockquote>"Once. About two years ago. I couldn't remember my login, IT took three days to reset it, by which point I'd given up. I have 22 staff, bed management calls every morning, and a ward round at eight. I am not going to log into anything that isn't the EPR or the rota system. If something needs a login, it doesn't exist for me."</blockquote>
+<p><strong>What this validates:</strong> The no-login constraint is absolute, not a preference. A magic-link email is the only viable delivery mechanism for this persona. A ward-facing web app is correctly deprioritised from MVP. This is discovery finding F4 confirmed directly.</p>
+
+<h3>Q3 · If you received a short email every Monday morning about your ward's patient feedback — what would you actually need to see in it to find it useful?</h3>
+<blockquote>"Tell me what patients said. Not a score — what they actually said. The top two things that were good, the top two things that need fixing. And I want at least one actual quote — a real sentence a patient wrote. My team never get to hear the good stuff. It all gets filtered into complaints before it reaches us. If I could read out one positive comment at the Monday huddle, that would change the whole tone of the week."</blockquote>
+<p><strong>What this validates:</strong> The digest format — top 2 positives, top 2 concerns, minimum 1 verbatim quote — is exactly right. The positive verbatim is not a nice detail; it is the feature that makes the ward manager read the email every week. Structural, not optional.</p>
+
+<h3>Q4 · Would you share that kind of email with your team? And if so, how?</h3>
+<blockquote>"Yes, immediately. I'd forward it to the ward WhatsApp. Or print it and put it on the noticeboard. But only if it was short — if it was two pages long nobody reads it, including me. One screen, done. And it needs to have something positive in it or I'm not putting it in front of my team. I'm not going to depress people on a Monday morning."</blockquote>
+<p><strong>What this validates:</strong> The one-tap share link is confirmed as a real behaviour, not an assumption. The digest must be single-screen length. The positive content requirement is again reinforced — this is Priya's baseline for engagement, not a bonus.</p>
+
+<h3>Q5 · If a patient complaint landed on your ward tomorrow that could have been caught earlier from feedback data — what would that feel like?</h3>
+<blockquote>"It's happened. A patient raised a formal complaint about how a discharge was handled. When the quality team looked back at the FFT data, there were three comments about discharge confusion on my ward in the two months before. Nobody flagged it. Nobody told me. If I'd known, I would have changed how we brief patients before they leave. That's on me — but only because I didn't have the information. That's the part that stays with you."</blockquote>
+<p><strong>What this validates:</strong> The emotional stakes of missing feedback are real and personal for ward managers. The weekly digest — arriving before problems escalate — directly addresses this. This quote is the emotional anchor for the Ward Manager story in the demo.</p>`)
   },
   {
     id: 'artefact-business-strategy',
