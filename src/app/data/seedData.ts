@@ -196,29 +196,126 @@ export const SEED_MARKET_RESEARCH = [
   {
     id: 'artefact-jtbd',
     title: 'Jobs-to-be-Done Canvases',
-    description: 'What each persona is actually trying to accomplish — the job they hire our product to do. Three canvases: Chief Nurse, Quality Manager, Ward Manager.',
+    description: 'MVP-scoped JTBD canvases for all three personas. Updated post-discovery with switch triggers, workarounds, desired outcomes, and MVP feature mapping.',
     thumbnail: 'https://images.unsplash.com/photo-1543269664-7eef42226a21?w=1200&h=600&fit=crop&auto=format',
     richContent: rich(`
-<h2>Chief Nurse — JTBD Canvas</h2>
-<blockquote>"I need to know which services are in trouble from a patient experience perspective before I walk into the board meeting — not because the media told me." — Chief Nurse, large acute trust</blockquote>
+<h2>Chief Nurse / Director of Patient Experience</h2>
+<blockquote>"I need to know which services are in trouble before I walk into the board meeting — not because the media told me, and not because a complaint landed on my desk." — Chief Nurse, large acute trust (user interview, Round 1)</blockquote>
+<h3>Core Job Statement</h3>
+<p>When I am accountable for patient experience and trust income across a large NHS organisation, I want to be alerted to deteriorating services within 24 hours — with the driving theme identified — so I can act before a ward-level problem becomes a board-level crisis or a CQC finding.</p>
 <table>
-<tr><th>Core Job Statement</th><th>Current Workaround (pain)</th></tr>
-<tr><td>When I am accountable for patient experience across a large trust, I want to know which services are deteriorating — and why — before they become a serious incident, so I can protect patients and the trust's income.</td><td><ul><li>Manual quarterly sampling of FFT comments by an administrator</li><li>Complaints review in monthly committee — weeks after the fact</li><li>Finding out about ward problems from the press</li><li>Producing CQC evidence by manually collating spreadsheets over 2–3 weeks</li></ul></td></tr>
+<tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr>
+<tr><td>Get a risk alert when a service deteriorates, with enough context to act on it immediately</td><td>Feel in control and informed — not reactive and surprised</td><td>Be seen by the board and CQC as running a trust that takes patient feedback seriously</td></tr>
 </table>
-<p><strong>Switch trigger:</strong> (a) near-miss where feedback data was available but not seen in time, (b) upcoming CQC inspection where current evidence is thin, or (c) finance director flagging 10YHP payment exposure.</p>
-<h2>Quality Manager — JTBD Canvas</h2>
-<blockquote>"I spend two days every quarter manually coding FFT comments into a spreadsheet. I know there must be a better way but nobody has built one that actually works with NHS data." — Quality Manager, acute trust</blockquote>
+<h3>Current Workarounds (the pain we replace)</h3>
+<ul>
+<li>Administrator manually samples 10–20% of FFT comments each quarter and codes them in Excel</li>
+<li>Monthly committee review of complaints — issues surface 4–8 weeks after they occurred</li>
+<li>Finding out about ward problems from the press, a Freedom of Information request, or a coroner's letter</li>
+<li>Producing CQC Well-Led evidence by manually collating spreadsheets and Word documents — 2–3 weeks of quality team time per inspection</li>
+<li>Board patient experience pack prepared manually by the quality team — typically 2 days of work each quarter</li>
+</ul>
+<h3>Desired Outcomes (what success looks like)</h3>
+<ul>
+<li>Receive a red alert within 24 hours when any service crosses the risk threshold — containing: service name, threshold crossed, top driving theme, direct dashboard link</li>
+<li>Walk into the board with an auto-generated PDF covering trust-wide sentiment trends, top 3 risks, and week-on-week direction — no manual preparation</li>
+<li>Produce a CQC evidence export in under an hour showing all feedback processed, themes identified, and actions taken</li>
+<li>Demonstrate to NHSE and inspectors that the trust has a functioning, real-time feedback intelligence process</li>
+</ul>
+<h3>Switch Triggers (what makes them buy)</h3>
+<ul>
+<li>A near-miss where patient feedback data existed but was not seen in time — ward problem went to the press before it reached the board</li>
+<li>An upcoming CQC Well-Led inspection where current patient experience evidence is thin or manually assembled</li>
+<li>Finance Director flagging 10YHP payment exposure — patient ratings now directly linked to trust income from summer 2025</li>
+<li>MTPF compliance mandate: near-real-time ward feedback monitoring is already required from October 2025</li>
+</ul>
+<h3>MVP Feature Mapping</h3>
 <table>
-<tr><th>Core Job Statement</th><th>Current Workaround (pain)</th></tr>
-<tr><td>When I am responsible for turning patient feedback into actionable intelligence, I want to automatically process all feedback sources into themed, prioritised insight — so I can spend my time acting on problems, not finding them.</td><td><ul><li>Exports FFT responses to Excel; manually codes themes</li><li>Samples 10–20% of comments — the rest go unread</li><li>Creates CQC evidence pack by copy-pasting into Word — 2–3 weeks of work</li><li>No systematic way to track whether improvements changed feedback</li></ul></td></tr>
+<tr><th>Job</th><th>MVP Feature</th></tr>
+<tr><td>Know when a service deteriorates</td><td>24-hour red alert email with threshold, driving theme, and dashboard link</td></tr>
+<tr><td>Prepare for board meeting</td><td>Auto-generated PDF board pack — sentiment trend, top 3 risks, direction indicator</td></tr>
+<tr><td>Respond to CQC inspectors</td><td>One-click CQC evidence export covering all feedback, themes, and action log</td></tr>
 </table>
-<h2>Ward Manager — JTBD Canvas</h2>
-<blockquote>"Send me an email. One. On Monday morning. Short. Tell me what patients said about my ward last week — the good and the bad. I'll read that. I will not log into another system." — Ward Manager, A&amp;E</blockquote>
+
+<h2>Quality Manager / Patient Experience Lead</h2>
+<blockquote>"I spend two days every quarter manually coding FFT comments in Excel. I know there must be a better way — but nobody has built one that actually works with real NHS free-text data." — Quality Manager, acute trust (user interview, Round 1)</blockquote>
+<h3>Core Job Statement</h3>
+<p>When I am responsible for turning patient feedback into actionable intelligence for clinical and executive audiences, I want to see the top 3 deteriorating wards at a glance and drill to the specific themes and verbatims driving each — so I can prioritise my response and stop spending days on manual data processing.</p>
 <table>
-<tr><th>Core Job Statement</th><th>Key Design Constraint</th></tr>
-<tr><td>When I am running a ward and accountable for patient experience on my patch, I want to know what patients are saying before problems escalate — so I can address issues early and give my staff the feedback they deserve.</td><td>Any tool that adds time to a 12-hour ward shift will be abandoned. Design for the ward manager who has 3 minutes on a Tuesday morning.</td></tr>
+<tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr>
+<tr><td>Process 100% of feedback automatically; surface the highest-risk wards without alert fatigue</td><td>Feel like a strategic analyst, not a data entry clerk</td><td>Be trusted by the Chief Nurse and board to provide reliable, timely intelligence — not sampled guesswork</td></tr>
 </table>
-<p><strong>Unexpected insight — Positive feedback is a killer feature:</strong> 'My team never hear the good stuff — only complaints reach us. That alone would change how my staff feel about Monday mornings.' The weekly digest must always include at least one positive verbatim comment. This is structural, not optional.</p>`)
+<h3>Current Workarounds (the pain we replace)</h3>
+<ul>
+<li>Exports FFT responses to Excel; manually reads and codes each free-text comment into themes</li>
+<li>Samples 10–20% of comments — the majority go unread every quarter</li>
+<li>Dashboard shows every ward above threshold — no way to prioritise; alert fatigue sets in immediately (discovery finding F3)</li>
+<li>Creates CQC evidence pack by copy-pasting tables into Word — 2–3 weeks of work before every inspection</li>
+<li>No systematic way to show that an improvement action changed patient feedback scores</li>
+</ul>
+<h3>Desired Outcomes (what success looks like)</h3>
+<ul>
+<li>See only the top 3 deteriorating wards by default — with a 'show all' toggle for when that's needed</li>
+<li>Drill from an alert to the top 5 driving themes, then to 3–10 representative verbatim comments — in 3 clicks</li>
+<li>AI classifies 100% of FFT and NHS App comments at 91%+ accuracy — no manual coding</li>
+<li>Generate a board-ready PDF export in minutes, not days</li>
+<li>Log an action against a theme and see whether the ward score improves in the following weeks</li>
+</ul>
+<h3>Switch Triggers (what makes them buy)</h3>
+<ul>
+<li>Quarter-end crunch: 2 days of manual coding ahead, board pack due in a week</li>
+<li>A ward issue that escalated to a complaint — and the free-text warning signs were in the unread 80% of comments</li>
+<li>CQC inspection scheduled — quality team needs evidence that feedback is being systematically acted on</li>
+<li>Chief Nurse asking for a real-time picture of which wards are struggling — current tools can't provide it</li>
+</ul>
+<h3>MVP Feature Mapping</h3>
+<table>
+<tr><th>Job</th><th>MVP Feature</th></tr>
+<tr><td>Prioritise without alert fatigue</td><td>Alert dashboard — top 3 deteriorating wards by default, 'show all' toggle</td></tr>
+<tr><td>Understand what's driving the risk</td><td>Theme drilldown: alert → top 5 themes → 3–10 verbatim comments per theme</td></tr>
+<tr><td>Process all feedback, not a sample</td><td>AI theme classification at 91%+ accuracy on 100% of FFT and NHS App comments</td></tr>
+<tr><td>Report to board and CQC</td><td>PDF board pack export covering sentiment trend, alerts, and theme breakdown</td></tr>
+</table>
+
+<h2>Ward Manager / Service Line Lead</h2>
+<blockquote>"Send me an email. One. On Monday morning. Short. Tell me what patients said about my ward last week — the good and the bad. I'll read that. I will not log into another system." — Ward Manager, A&amp;E (user interview, Round 1)</blockquote>
+<h3>Core Job Statement</h3>
+<p>When I am running a ward and accountable for patient experience on my patch, I want to know what patients said about my ward last week — including the positive comments — delivered to my inbox before the Monday shift, so I can address concerns early and give my team the recognition they deserve.</p>
+<table>
+<tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr>
+<tr><td>Receive a ward-specific, readable weekly summary with no login and no new system to learn</td><td>Feel connected to patient feedback without it adding to an already overloaded shift</td><td>Share positive patient comments with the team — build a culture where staff feel their work is seen and valued</td></tr>
+</table>
+<h3>Current Workarounds (the pain we replace)</h3>
+<ul>
+<li>Feedback arrives 4–6 weeks after a patient's stay — too late to recognise the staff involved or address the issue</li>
+<li>Aggregated satisfaction scores (e.g. "87% positive") give no indication of what specifically went wrong or right</li>
+<li>Logging into another system during a 12-hour ward shift is not realistic — confirmed by all ward managers in Round 1 interviews</li>
+<li>Positive patient comments are filtered out centrally — only complaints and concerns reach the ward</li>
+<li>Feedback collected at trust level feels disconnected from day-to-day ward reality</li>
+</ul>
+<h3>Desired Outcomes (what success looks like)</h3>
+<ul>
+<li>One email, Monday 08:00, readable in under 3 minutes — no login, no app, no new system</li>
+<li>Top 2 concern themes from last week — specific and actionable, not headline scores</li>
+<li>Top 2 positive themes from last week — named so they can be shared with the team</li>
+<li>At least 1 positive verbatim patient comment in every digest — this is structural, not optional (discovery insight)</li>
+<li>A one-tap 'share with team' link so the digest can be forwarded to the ward WhatsApp group in seconds</li>
+</ul>
+<h3>Switch Triggers (what makes them engage)</h3>
+<ul>
+<li>A ward manager who reads the Monday digest and shares a patient quote at huddle — peers notice and want the same</li>
+<li>A concern in the digest that the ward manager addresses the same week — before it becomes a formal complaint</li>
+<li>Positive comments reach staff who had no idea patients felt that way — staff morale impact is immediate</li>
+</ul>
+<h3>Key Design Constraint (non-negotiable)</h3>
+<p>Any touchpoint that requires a login, an app download, or more than 3 minutes of attention during a ward shift will be abandoned within two weeks. The digest is the product for this persona. A ward-facing web dashboard is post-MVP.</p>
+<h3>MVP Feature Mapping</h3>
+<table>
+<tr><th>Job</th><th>MVP Feature</th></tr>
+<tr><td>Know what patients said last week</td><td>Monday 08:00 digest email — top 2 concerns + top 2 positives + 1 verbatim quote</td></tr>
+<tr><td>No login friction</td><td>Magic link in email (7-day expiry) — no account, no password, no app</td></tr>
+<tr><td>Share with the team</td><td>One-tap 'share with team' link included in every digest</td></tr>
+</table>`)
   },
   {
     id: 'artefact-prd',

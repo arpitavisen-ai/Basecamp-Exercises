@@ -195,5 +195,5 @@ Updated automatically as decisions are made, changed, or removed.
 
 ---
 
-*Last updated: 2026-07-02 (added AD-06 secrets management, updated AD-07 with dual-remote note)*  
+*Last updated: 2026-07-03 (personas and JTBD canvases updated to MVP demo scope and discovery findings; SEED_VERSION bumped to 5)*  
 *Update this file whenever a significant architectural, design, or coding decision is made, changed, or reversed.*
