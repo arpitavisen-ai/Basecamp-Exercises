@@ -127,7 +127,7 @@ const DEFAULT_PHASES: EditablePhase[] = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function usePhases() {
-  const [phases, setPhases] = useFirebaseSync<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
+  const [phases, setPhases, flushPhases] = useFirebaseSync<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
 
   const updatePhase = useCallback((phaseId: string, field: keyof EditablePhase, value: string) => {
     setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, [field]: value } : p));
@@ -172,13 +172,13 @@ function usePhases() {
     ));
   }, [setPhases]);
 
-  return { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet };
+  return { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet, flushPhases };
 }
 
 // ─── Card detail modal ────────────────────────────────────────────────────────
 
 function CardModal({
-  card, phaseId, config, phaseTagColor, open, onClose,
+  card, phaseId, config, phaseTagColor, open, onClose, onFlush,
   updateCard, updateBullet, addBullet, removeBullet,
 }: {
   card: EditableCard;
@@ -187,13 +187,14 @@ function CardModal({
   phaseTagColor: string;
   open: boolean;
   onClose: () => void;
+  onFlush: () => void;
   updateCard: (field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (idx: number, value: string) => void;
   addBullet: () => void;
   removeBullet: (idx: number) => void;
 }) {
   return (
-    <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog.Root open={open} onOpenChange={v => { if (!v) { onFlush(); onClose(); } }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50" />
         <Dialog.Content aria-describedby={undefined} className="fixed inset-0 flex items-center justify-center z-50 p-6 outline-none">
@@ -293,13 +294,14 @@ function CardModal({
 // ─── Flip card ────────────────────────────────────────────────────────────────
 
 function FlipCard({
-  card, phaseId, config, phaseTagColor,
+  card, phaseId, config, phaseTagColor, onFlush,
   updateCard, updateBullet, addBullet, removeBullet,
 }: {
   card: EditableCard;
   phaseId: string;
   config: PhaseConfig['cards'][number];
   phaseTagColor: string;
+  onFlush: () => void;
   updateCard: (field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (idx: number, value: string) => void;
   addBullet: () => void;
@@ -382,7 +384,7 @@ function FlipCard({
       <CardModal
         card={card} phaseId={phaseId} config={config}
         phaseTagColor={phaseTagColor}
-        open={modalOpen} onClose={() => setModalOpen(false)}
+        open={modalOpen} onClose={() => setModalOpen(false)} onFlush={onFlush}
         updateCard={updateCard}
         updateBullet={updateBullet}
         addBullet={addBullet}
@@ -580,11 +582,12 @@ function PhaseVideoSnippet({
 // ─── Phase section ────────────────────────────────────────────────────────────
 
 function PhaseSection({
-  phase, config,
+  phase, config, onFlush,
   updatePhase, updateCard, updateBullet, addBullet, removeBullet,
 }: {
   phase: EditablePhase;
   config: PhaseConfig;
+  onFlush: () => void;
   updatePhase: (field: keyof EditablePhase, value: string) => void;
   updateCard: (cardId: string, field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (cardId: string, idx: number, value: string) => void;
@@ -635,6 +638,7 @@ function PhaseSection({
               phaseId={phase.id}
               config={cardConfig}
               phaseTagColor={config.tagColor}
+              onFlush={onFlush}
               updateCard={(field, value) => updateCard(card.id, field, value)}
               updateBullet={(idx, value) => updateBullet(card.id, idx, value)}
               addBullet={() => addBullet(card.id)}
@@ -656,14 +660,15 @@ function PhaseSection({
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function PDLCSection() {
-  const { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet } = usePhases();
+  const { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet, flushPhases } = usePhases();
   const [saving, setSaving] = useState(false);
 
   const handleSave = () => {
+    flushPhases();
     setSaving(true);
     setTimeout(() => setSaving(false), 1200);
     toast.success('All changes saved', {
-      description: 'Your PDLC content has been saved to local storage.',
+      description: 'Your PDLC content has been saved to Firebase.',
       duration: 3000,
     });
   };
@@ -743,6 +748,7 @@ export function PDLCSection() {
               <PhaseSection
                 phase={phase}
                 config={pc}
+                onFlush={flushPhases}
                 updatePhase={(field, value) => updatePhase(pc.id, field, value)}
                 updateCard={(cardId, field, value) => updateCard(pc.id, cardId, field, value)}
                 updateBullet={(cardId, idx, value) => updateBullet(pc.id, cardId, idx, value)}

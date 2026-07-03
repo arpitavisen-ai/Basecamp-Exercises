@@ -29,7 +29,13 @@ export function useFirebaseSync<T>(path: string, initialValue: T) {
 
     return () => {
       unsubscribe();
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      // Flush any pending debounced write before unmounting — prevents data loss
+      // when the user navigates away within the 800ms debounce window.
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        set(ref(db, path), JSON.stringify(latestRef.current));
+      }
     };
   }, [path]);
 
