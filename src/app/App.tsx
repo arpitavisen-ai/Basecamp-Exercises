@@ -134,15 +134,15 @@ export default function App() {
                 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-400 mb-4"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
-                Strategic Initiative
+                S&amp;PE Product Demo
               </p>
               <h1
                 className="text-5xl font-semibold text-slate-900 leading-tight mb-6"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                Product Intelligence
+                AI in Product Management
                 <br />
-                <em className="font-normal text-slate-600">for the NHS</em>
+                <em className="font-normal text-slate-600">usecase Feedback analysis for NHS</em>
               </h1>
               <div className="relative group">
                 <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/40 rounded-full" />
@@ -215,7 +215,7 @@ export default function App() {
               {[
                 { value: 'users', label: 'User Analysis', Icon: Users },
                 { value: 'research', label: 'Artefacts', Icon: TrendingUp },
-                { value: 'pdlc', label: 'PDLC', Icon: Layers },
+                { value: 'pdlc', label: 'AI in PDLC', Icon: Layers },
                 { value: 'tasks', label: 'Tasks', Icon: ListChecks },
               ].map(({ value, label, Icon }) => (
                 <Tabs.Trigger

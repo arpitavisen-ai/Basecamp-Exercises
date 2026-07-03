@@ -30,10 +30,8 @@ const PHASE_CONFIG: PhaseConfig[] = [
     cards: [
       { id: 'ps-1', frontAccent: 'from-blue-600/20 to-blue-800/10', backBg: '#0F1E3A', icon: <BarChart2 className="w-6 h-6" /> },
       { id: 'ps-2', frontAccent: 'from-blue-600/20 to-indigo-800/10', backBg: '#0F1E3A', icon: <Target className="w-6 h-6" /> },
-      { id: 'ps-3', frontAccent: 'from-blue-700/20 to-blue-900/10', backBg: '#0F1E3A', icon: <TrendingUp className="w-6 h-6" /> },
       { id: 'ps-4', frontAccent: 'from-indigo-600/20 to-blue-800/10', backBg: '#0F1E3A', icon: <Target className="w-6 h-6" /> },
       { id: 'ps-5', frontAccent: 'from-blue-500/20 to-blue-900/10', backBg: '#0F1E3A', icon: <Map className="w-6 h-6" /> },
-      { id: 'ps-6', frontAccent: 'from-blue-800/20 to-indigo-900/10', backBg: '#0F1E3A', icon: <Users2 className="w-6 h-6" /> },
     ],
   },
   {
@@ -90,10 +88,8 @@ const DEFAULT_PHASES: EditablePhase[] = [
     cards: [
       { id: 'ps-1', title: 'Market & Competitive Research', subtitle: 'Landscape analysis', description: 'Analyse the competitive landscape and identify market positioning opportunities. Understand how peers in public and private sector address the same problem.', bullets: ['Competitor benchmarking', 'Market sizing & opportunity', 'Gap analysis', 'PEST analysis', 'Positioning differentiation'] },
       { id: 'ps-2', title: 'Vision, Mission & SWOT', subtitle: 'Strategic foundation', description: 'Define the product vision, mission, and strategic objectives. Conduct a SWOT analysis to ensure the direction is sound and defensible.', bullets: ['Product vision statement', 'Mission articulation', 'SWOT mapping', 'Strategic objectives', 'Success criteria definition'] },
-      { id: 'ps-3', title: 'Business Case Analysis', subtitle: 'Value justification', description: 'Build a compelling business case that quantifies value and justifies investment in the platform, using evidence from research and user data.', bullets: ['ROI modelling', 'Cost-benefit analysis', 'Risk assessment', 'Investment phasing', 'Stakeholder sign-off'] },
       { id: 'ps-4', title: 'OKR Definition', subtitle: 'Measurable outcomes', description: 'Define Objectives and Key Results to track product success, align teams, and create accountability at every level of the organisation.', bullets: ['Objective setting', 'Key results design', 'Metrics framework', 'Quarterly review cadence', 'OKR tooling setup'] },
       { id: 'ps-5', title: 'Product Roadmap', subtitle: 'Delivery planning', description: 'Create a prioritised roadmap that aligns delivery phases with strategic goals and communicates intent clearly to all stakeholders.', bullets: ['Feature prioritisation (RICE/MoSCoW)', 'Quarter-by-quarter planning', 'Dependency mapping', 'Milestone definition', 'Change management process'] },
-      { id: 'ps-6', title: 'Stakeholder Mapping', subtitle: 'Governance & compliance', description: 'Identify primary, secondary, and legal stakeholders to ensure inclusive and compliant delivery across the public sector landscape.', bullets: ['Customer segmentation', 'Legal & compliance mapping', 'Governance structure', 'Comms & engagement plan', 'RACI definition'] },
     ],
   },
   {
@@ -356,17 +352,17 @@ function FlipCard({
 
           {/* Back */}
           <div
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, background: config.backBg }}
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
             className="rounded-xl border border-slate-200 bg-white flex flex-col p-4 overflow-hidden"
           >
             <p
-              className="text-[11px] text-slate-700 leading-relaxed mb-3 flex-1 line-clamp-3"
+              className="text-[11px] text-slate-800 leading-relaxed mb-3 flex-1 line-clamp-3"
               dangerouslySetInnerHTML={{ __html: card.description || '<em>No description yet</em>' }}
             />
             <ul className="space-y-1 mb-3">
               {card.bullets.slice(0, 3).map((b, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-600">
-                  <span className="w-1 h-1 rounded-full bg-slate-400 flex-shrink-0" />
+                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-700">
+                  <span className="w-1 h-1 rounded-full bg-slate-500 flex-shrink-0" />
                   {b}
                 </li>
               ))}

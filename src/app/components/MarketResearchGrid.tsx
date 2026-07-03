@@ -670,7 +670,7 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave }:
           {onSave && (
             <button
               onClick={() => { onSave(); toast.success('All changes saved to database'); }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-sm font-medium rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors"
             >
               <Save className="w-4 h-4" />
               Save All Changes
