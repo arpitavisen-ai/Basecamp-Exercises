@@ -1,4 +1,4 @@
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 export const SEED_PROBLEM_STATEMENT = `NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards.`;
 
@@ -544,6 +544,148 @@ export const SEED_MARKET_RESEARCH = [
 <h3>Q5 · If a patient complaint landed on your ward tomorrow that could have been caught earlier from feedback data — what would that feel like?</h3>
 <blockquote>"It's happened. A patient raised a formal complaint about how a discharge was handled. When the quality team looked back at the FFT data, there were three comments about discharge confusion on my ward in the two months before. Nobody flagged it. Nobody told me. If I'd known, I would have changed how we brief patients before they leave. That's on me — but only because I didn't have the information. That's the part that stays with you."</blockquote>
 <p><strong>What this validates:</strong> The emotional stakes of missing feedback are real and personal for ward managers. The weekly digest — arriving before problems escalate — directly addresses this. This quote is the emotional anchor for the Ward Manager story in the demo.</p>`)
+  },
+  {
+    id: 'artefact-tech-discovery',
+    title: 'Technical Discovery Report',
+    description: 'MVP-scoped technical findings: stack decisions, NHS infrastructure constraints, IG requirements, architectural patterns, and reusable components identified during discovery.',
+    thumbnail: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=600&fit=crop&auto=format',
+    richContent: rich(`
+<h2>Purpose of This Report</h2>
+<p>This technical discovery report documents the engineering findings, constraints, and architectural decisions identified during the MVP discovery phase. It is scoped strictly to what is needed to build and demonstrate the MVP — AI theme classification, sentiment alerting, ward digest email, and board pack export. It does not attempt to design a production-scale architecture.</p>
+
+<h2>1. MVP Technical Scope</h2>
+<p>The following capabilities are in scope for the MVP build. Everything else is explicitly deferred.</p>
+<table>
+<tr><th>Capability</th><th>In MVP</th><th>Deferred</th></tr>
+<tr><td>NHS FFT data ingest (CSV upload)</td><td>✓</td><td></td></tr>
+<tr><td>NHS App ratings ingest (API)</td><td>✓</td><td></td></tr>
+<tr><td>AI theme classification on free-text</td><td>✓</td><td></td></tr>
+<tr><td>Sentiment scoring per comment</td><td>✓</td><td></td></tr>
+<tr><td>Top-3 deteriorating wards alert dashboard</td><td>✓</td><td></td></tr>
+<tr><td>Drilldown: alert → theme → verbatim</td><td>✓</td><td></td></tr>
+<tr><td>Weekly ward digest email (magic link)</td><td>✓</td><td></td></tr>
+<tr><td>Board pack PDF export</td><td>✓</td><td></td></tr>
+<tr><td>Role-based access (QM + Chief Nurse)</td><td>✓</td><td></td></tr>
+<tr><td>PALS / Datix / complaints integrations</td><td></td><td>Next phase</td></tr>
+<tr><td>Real-time streaming ingest</td><td></td><td>Next phase</td></tr>
+<tr><td>On-premise deployment option</td><td></td><td>Year 2</td></tr>
+<tr><td>ICB cross-trust aggregation</td><td></td><td>Year 2</td></tr>
+<tr><td>Multi-language support</td><td></td><td>Year 2</td></tr>
+</table>
+
+<h2>2. Technical Requirements</h2>
+<h3>Data Ingest</h3>
+<ul>
+<li><strong>FFT CSV:</strong> Accept NHS England FFT export format (Excel + CSV). Column mapping must handle trust naming variations and ward code inconsistencies across providers. A normalisation layer is required before classification.</li>
+<li><strong>NHS App API:</strong> Authenticate via NHS Identity / OAuth 2.0. Rate limits apply — ingest should be batched, not streamed. API schema versioning must be tracked as NHS App is actively developing its feedback endpoints.</li>
+<li><strong>Deduplication:</strong> Composite key dedup (trustCode + wardCode + responseDate + overallExperience + comment hash) applied at ingest. Required because trusts re-export overlapping date ranges.</li>
+</ul>
+<h3>AI Classification</h3>
+<ul>
+<li><strong>Model:</strong> Fine-tuned transformer (BERT-base or ClinicalBERT) on NHS FFT taxonomy. Out-of-the-box accuracy: 89%. Post-taxonomy-fix target: ≥91% overall, ≥88% per theme.</li>
+<li><strong>Taxonomy:</strong> 6 themes — Communication, Environment &amp; Facilities, Waiting &amp; Delays, Clinical Care &amp; Treatment, Staffing &amp; Attitudes, Privacy &amp; Dignity (split from original Dignity &amp; Respect per discovery finding F2).</li>
+<li><strong>Inference latency:</strong> &lt;2s per comment target. Batch processing for bulk ingest; real-time single-comment classification for live dashboard updates.</li>
+<li><strong>Confidence threshold:</strong> Comments below 0.65 confidence are flagged as "unclassified" and surfaced for manual review — never silently discarded.</li>
+</ul>
+<h3>Alerting Engine</h3>
+<ul>
+<li>Rolling 4-week sentiment window per ward. Alert triggers when week-on-week change exceeds configurable threshold (default: −8 points).</li>
+<li>Top-3 wards by deterioration magnitude surfaced by default. All wards accessible via toggle.</li>
+<li>Alert pipeline runs nightly. Near-real-time alerting (sub-1h) is post-MVP.</li>
+</ul>
+<h3>Email Digest</h3>
+<ul>
+<li>Sent Monday 08:00 GMT via transactional email provider (SendGrid or AWS SES).</li>
+<li>Magic link authentication — JWT signed, 7-day expiry, ward-scoped. No password or account required.</li>
+<li>Template must render correctly in Outlook (including desktop client) — the dominant NHS email client.</li>
+<li>Plain text fallback required. Never send an empty digest — skip with a logged error if no data.</li>
+</ul>
+<h3>Board Pack Export</h3>
+<ul>
+<li>PDF generated server-side (Puppeteer or WeasyPrint). Client-side PDF is unreliable across NHS network proxies.</li>
+<li>Contents: trust-wide sentiment trend (12 weeks), top 3 risk alerts, theme breakdown, week-on-week direction indicator.</li>
+<li>Must be accessible (WCAG 2.1 AA) — colour is never the sole indicator of alert status.</li>
+</ul>
+
+<h2>3. NHS Infrastructure Constraints</h2>
+<h3>Network and Connectivity</h3>
+<ul>
+<li><strong>NHS network proxies:</strong> Many trust networks route outbound HTTPS through Zscaler or similar. API calls from trust-hosted clients may be intercepted. Design for proxy-hostile environments — avoid WebSockets for critical paths; use polling with exponential backoff.</li>
+<li><strong>N3 / HSCN:</strong> The Health and Social Care Network carries NHS data traffic. Cloud services must be accessible from HSCN without requiring VPN tunnels per trust.</li>
+<li><strong>Bandwidth:</strong> Some ward terminals operate on constrained bandwidth. The dashboard must load in &lt;3s on a 10Mbps connection. No heavy client-side bundles on the critical path.</li>
+</ul>
+<h3>Device and Browser Environment</h3>
+<ul>
+<li>NHS trusts standardise on Windows 10 with Internet Explorer 11 still present on clinical desktops — though Chrome/Edge are increasingly deployed. Target: Chrome 90+, Edge 90+. IE11 is explicitly out of scope.</li>
+<li>Ward terminals are often shared, locked-down devices. No local storage of patient data. Session tokens must be server-side only.</li>
+<li>Email digest must render in Outlook 2016/2019 desktop. Avoid CSS Grid and Flexbox in email — use table-based layouts.</li>
+</ul>
+<h3>Identity and Access</h3>
+<ul>
+<li><strong>NHS Login:</strong> Not yet suitable for staff-facing applications at MVP. Use trust-level SSO (Azure AD / ADFS) via SAML 2.0 or OIDC as the authentication mechanism for Quality Manager and Chief Nurse roles.</li>
+<li><strong>Role provisioning:</strong> Trust IG leads provision users manually at onboarding. No self-registration. User management UI required for trust admins.</li>
+<li><strong>Magic link (Ward Manager):</strong> No NHS Login or trust SSO. JWT signed with ward-scoped claims. Expires 7 days. Treated as a read-only, low-risk access pattern — confirmed acceptable by 3 of 4 IG leads in discovery.</li>
+</ul>
+<h3>Data Residency and IG</h3>
+<ul>
+<li>All patient data must be processed and stored within UK (Azure UK South primary, UK West failover). No data transits outside UK — including AI model inference calls.</li>
+<li>DTAC assessment is a prerequisite to any trust signing a data processing agreement. Target: DTAC complete in Q1.</li>
+<li>DPIA must be completed and signed by trust IG before any patient data is transferred. Template DPIA to be provided at onboarding.</li>
+<li>UK GDPR Article 9 (special category data) applies. Feedback data linked to care settings is treated as potentially health-related.</li>
+</ul>
+
+<h2>4. Technical Limitations Identified in Discovery</h2>
+<table>
+<tr><th>Limitation</th><th>Impact</th><th>Mitigation</th></tr>
+<tr><td>NHS ward naming is not standardised across trusts</td><td>Matching feedback to organisational structure requires per-trust mapping</td><td>Ward mapping workshop with each trust at onboarding; maintain a normalisation table per trust</td></tr>
+<tr><td>FFT data arrives in batches (monthly/quarterly) not in real-time</td><td>Dashboard reflects historic data, not live ward state</td><td>Clearly communicate data freshness in UI; real-time ingest is post-MVP</td></tr>
+<tr><td>AI accuracy drops on dignity/respect and multi-theme comments</td><td>Theme breakdown is less reliable for nuanced comments</td><td>Taxonomy split (Privacy &amp; Dignity / Feeling Dismissed) closes gap to 91%+. Low-confidence comments flagged explicitly.</td></tr>
+<tr><td>NHS App feedback API is in active development — schema may change</td><td>Ingest connector may break on API updates</td><td>Version-pin API calls; subscribe to NHS App developer changelog; build connector as a replaceable adapter</td></tr>
+<tr><td>One trust requires on-premise processing (post-Synnovis risk)</td><td>Cloud-only MVP excludes this trust</td><td>Architecture decision recorded: design for on-premise as a Year 2 deployment option. Containerise processing layer now.</td></tr>
+<tr><td>Outlook email client has limited CSS support</td><td>Digest may render poorly on some NHS desktops</td><td>Table-based email layout; test against Litmus Outlook matrix; plain text fallback always included</td></tr>
+</table>
+
+<h2>5. Architectural Considerations</h2>
+<h3>Proposed MVP Architecture</h3>
+<ul>
+<li><strong>Frontend:</strong> React SPA (Vite). Hosted on Vercel or Azure Static Web Apps. No server-side rendering required for MVP.</li>
+<li><strong>API layer:</strong> Node.js / FastAPI. Handles ingest, classification pipeline orchestration, alert computation, and export generation. Deployed as containerised services (Docker) on Azure Container Apps.</li>
+<li><strong>AI classification service:</strong> Python microservice wrapping the fine-tuned transformer. Isolated from the API layer so the model can be swapped without touching the rest of the stack. Communicates via internal HTTP.</li>
+<li><strong>Database:</strong> PostgreSQL (Azure Database for PostgreSQL Flexible Server). Stores ingested records, classification results, alert history, and user/ward mappings. Row-level security for trust data isolation.</li>
+<li><strong>Queue:</strong> Azure Service Bus. Decouples ingest from classification — large FFT batch uploads enqueue records rather than blocking the API response.</li>
+<li><strong>Email:</strong> SendGrid or AWS SES for transactional digest delivery. Templates stored as versioned HTML with plain text alternatives.</li>
+<li><strong>PDF export:</strong> Puppeteer running in a headless container, triggered server-side on export request.</li>
+</ul>
+<h3>Key Architectural Decisions</h3>
+<ul>
+<li><strong>Classification as an isolated microservice:</strong> The AI model is the component most likely to change (accuracy improvements, model upgrades, NHS-specific fine-tuning). Isolation means model updates don't require redeployment of the full stack.</li>
+<li><strong>Adapter pattern for data ingest:</strong> Each data source (FFT CSV, NHS App API, future PALS) has its own adapter that normalises data to a canonical schema before it enters the pipeline. Adding a new source is adding a new adapter — no core pipeline changes.</li>
+<li><strong>Containerisation from day one:</strong> Docker containers for all services — enables on-premise deployment in Year 2 without architectural rework. Also simplifies local development and CI/CD.</li>
+<li><strong>Trust data isolation at database level:</strong> Row-level security in PostgreSQL ensures no query can accidentally return data from another trust. Enforced at the DB layer, not just the application layer.</li>
+</ul>
+
+<h2>6. Reusable Components and Design Patterns</h2>
+<h3>Frontend Components (reusable across views)</h3>
+<table>
+<tr><th>Component</th><th>Reused In</th><th>Description</th></tr>
+<tr><td>AlertCard</td><td>Dashboard, Chief Nurse view</td><td>Renders a deteriorating ward with threshold, trend direction, and top theme. Configurable severity colour.</td></tr>
+<tr><td>ThemeBar</td><td>Alert drilldown, Board pack</td><td>Horizontal bar showing theme name, comment count, and sentiment direction. Accessible — no colour-only encoding.</td></tr>
+<tr><td>VerbatimList</td><td>Drilldown, Digest preview</td><td>Scrollable list of anonymised patient verbatim comments with optional sentiment tag.</td></tr>
+<tr><td>TrendSparkline</td><td>Dashboard, Board pack, Ward digest</td><td>Lightweight 12-week sentiment trend line. Renders in email as a static PNG fallback.</td></tr>
+<tr><td>RoleGate</td><td>All routes</td><td>Wraps any view in role-based access control. Renders nothing (not a redirect) if role is insufficient — prevents flash of unauthorised content.</td></tr>
+<tr><td>DataFreshnessTag</td><td>Dashboard, Digest</td><td>Always-visible indicator of when data was last ingested. Prevents users acting on stale data without realising.</td></tr>
+</table>
+<h3>Backend Patterns</h3>
+<table>
+<tr><th>Pattern</th><th>Where Applied</th><th>Why</th></tr>
+<tr><td>Ingest Adapter</td><td>FFT CSV, NHS App API, future sources</td><td>Normalises any source to canonical schema. Adding a source = adding an adapter, not changing core pipeline.</td></tr>
+<tr><td>Outbox Pattern</td><td>Alert generation, Digest dispatch</td><td>Writes events to DB before sending — ensures no alert or email is lost if the downstream service is temporarily unavailable.</td></tr>
+<tr><td>Confidence Threshold Guard</td><td>AI classification service</td><td>Any comment below 0.65 confidence is routed to an "unclassified" bucket rather than being forced into a theme. Prevents misleading theme counts.</td></tr>
+<tr><td>Per-Trust Row-Level Security</td><td>All DB queries</td><td>PostgreSQL RLS policy on every patient data table. Trust ID is injected from the authenticated session — not from query parameters.</td></tr>
+<tr><td>Magic Link JWT</td><td>Ward digest email</td><td>Signed JWT with ward scope and 7-day expiry. Stateless — no session store required. Revocation via JWT blocklist if needed.</td></tr>
+<tr><td>Versioned API Adapter</td><td>NHS App ingest connector</td><td>NHS App API schema is in active development. Version-pinned adapter with an upgrade path isolated from the core ingest pipeline.</td></tr>
+</table>`)
   },
   {
     id: 'artefact-business-strategy',

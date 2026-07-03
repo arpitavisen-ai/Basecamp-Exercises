@@ -32,9 +32,11 @@ export default function App() {
     SEED_MARKET_RESEARCH
   );
 
-  // Seed only paths that are genuinely empty — never overwrite user edits.
-  // SEED_VERSION is used only to trigger seeding of brand-new paths added in
-  // a release. Existing paths with user data are always left untouched.
+  // Migration strategy:
+  // - Scalar paths (problemStatement, userSegments): seed only if empty — user edits are authoritative.
+  // - marketResearch: merge by artefact ID — existing items and user edits are preserved,
+  //   but new seed artefacts (identified by id) are appended if not already present.
+  // Bump SEED_VERSION when adding new artefact IDs or new scalar paths.
   useEffect(() => {
     const versionRef = ref(db, 'dataVersion');
     get(versionRef).then(async snapshot => {
@@ -42,14 +44,28 @@ export default function App() {
       if (version < SEED_VERSION) {
         const seedIfEmpty = async (path: string, data: unknown) => {
           const snap = await get(ref(db, path));
+          if (!snap.exists()) await set(ref(db, path), JSON.stringify(data));
+        };
+
+        // Merge new seed artefacts into existing marketResearch without overwriting user edits
+        const mergeMarketResearch = async () => {
+          const snap = await get(ref(db, 'marketResearch'));
           if (!snap.exists()) {
-            await set(ref(db, path), JSON.stringify(data));
+            await set(ref(db, 'marketResearch'), JSON.stringify(SEED_MARKET_RESEARCH));
+          } else {
+            const existing = JSON.parse(snap.val() as string) as typeof SEED_MARKET_RESEARCH;
+            const existingIds = new Set(existing.map(item => item.id));
+            const newItems = SEED_MARKET_RESEARCH.filter(item => !existingIds.has(item.id));
+            if (newItems.length > 0) {
+              await set(ref(db, 'marketResearch'), JSON.stringify([...existing, ...newItems]));
+            }
           }
         };
+
         await Promise.all([
           seedIfEmpty('problemStatement', SEED_PROBLEM_STATEMENT),
           seedIfEmpty('userSegments', SEED_USER_SEGMENTS),
-          seedIfEmpty('marketResearch', SEED_MARKET_RESEARCH),
+          mergeMarketResearch(),
         ]);
         await set(versionRef, SEED_VERSION);
       }
@@ -118,15 +134,15 @@ export default function App() {
                 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-400 mb-4"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
               >
-                Strategic Initiative
+                S&amp;PE Product Demo
               </p>
               <h1
                 className="text-5xl font-semibold text-slate-900 leading-tight mb-6"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                Product Intelligence
+                AI in Product Management
                 <br />
-                <em className="font-normal text-slate-600">for the NHS</em>
+                <em className="font-normal text-slate-600">usecase: Feedback analysis for NHS</em>
               </h1>
               <div className="relative group">
                 <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/40 rounded-full" />
@@ -199,7 +215,7 @@ export default function App() {
               {[
                 { value: 'users', label: 'User Analysis', Icon: Users },
                 { value: 'research', label: 'Artefacts', Icon: TrendingUp },
-                { value: 'pdlc', label: 'PDLC', Icon: Layers },
+                { value: 'pdlc', label: 'AI in PDLC', Icon: Layers },
                 { value: 'tasks', label: 'Tasks', Icon: ListChecks },
               ].map(({ value, label, Icon }) => (
                 <Tabs.Trigger

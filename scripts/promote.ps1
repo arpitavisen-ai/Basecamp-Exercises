@@ -29,12 +29,12 @@ git pull upstream develop --no-rebase
 Write-Ok "develop is up to date"
 
 Write-Step "Building locally to catch any compile errors"
-npm run build
+pnpm build
 if ($LASTEXITCODE -ne 0) { Write-Fail "Build failed — fix errors before promoting." }
 Write-Ok "Build passed"
 
 Write-Host "`n── Local review" -ForegroundColor Cyan
-Write-Host "  Run 'npm run dev' in another terminal to review the app at http://localhost:5173" -ForegroundColor Yellow
+Write-Host "  Run 'pnpm dev' in another terminal to review the app at http://localhost:5173" -ForegroundColor Yellow
 $confirm = Read-Host "  Have you reviewed the app locally and are happy to deploy to production? (y/N)"
 if ($confirm -notmatch '^[Yy]$') {
     Write-Host "  Promotion cancelled. Run 'npm run dev' to review first." -ForegroundColor Yellow

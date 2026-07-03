@@ -32,7 +32,8 @@ Updated automatically as decisions are made, changed, or removed.
 **Decision:** All default content is defined in `src/app/data/seedData.ts` as `SEED_*` constants alongside a `SEED_VERSION` integer. On app mount, if the stored `dataVersion` is lower than `SEED_VERSION`, each path is seeded **only if it does not already exist in Firebase**. Existing user data is never overwritten.  
 **Rationale:** The original implementation used unconditional `set()` calls — every `SEED_VERSION` bump overwrote user edits in Firebase, reverting all in-app changes. The fix uses `seedIfEmpty()`: check the path first, write only if absent. `SEED_VERSION` now signals "check for new empty paths" not "reset everything."  
 **When to bump SEED_VERSION:** Only when adding a brand-new Firebase path that needs a default value for first-time users. Never bump it to push content updates to existing users — edit Firebase directly or accept that existing users keep their data.  
-**Current version:** `SEED_VERSION = 6`
+**Merge strategy for artefact arrays:** `marketResearch` is merged by artefact `id` — new seed items are appended only if their ID is not already present in Firebase. This allows new artefacts to appear for existing users without touching their edits or the existing items.  
+**Current version:** `SEED_VERSION = 7`
 
 ---
 
@@ -129,6 +130,15 @@ npm run promote      ← when happy: merges develop→main, pushes, triggers pro
 
 ---
 
+### DD-07 · Technical Discovery Report as a seeded artefact
+**Status:** Active  
+**Date:** 2026-07-03  
+**Decision:** The Technical Discovery Report is stored as a seed artefact (`artefact-tech-discovery`) in `SEED_MARKET_RESEARCH`. It covers: MVP technical scope, tech requirements, NHS infrastructure constraints (network proxies, HSCN, N3, device environment, identity/access, data residency/IG), technical limitations found in discovery, proposed MVP architecture, reusable frontend components, and backend patterns.  
+**Rationale:** Technical discovery findings must be discoverable alongside all other artefacts in the Artefacts tab. Storing it as a seed artefact means it appears automatically for all users (new and existing, via the merge-by-ID strategy) without requiring manual Firebase edits.  
+**Where:** `src/app/data/seedData.ts` — `artefact-tech-discovery` entry in `SEED_MARKET_RESEARCH`.
+
+---
+
 ### DD-08 · Discovery Research Plan as a structured 5-stage artefact
 **Status:** Active  
 **Date:** After MVP discovery plan update  
@@ -210,5 +220,5 @@ npm run promote      ← when happy: merges develop→main, pushes, triggers pro
 
 ---
 
-*Last updated: 2026-07-03 (added develop→main promotion workflow; local-first review before production deploy)*  
+*Last updated: 2026-07-03 (added Technical Discovery Report artefact DD-07; updated AD-03 to document merge-by-ID strategy for marketResearch; SEED_VERSION bumped to 7)*  
 *Update this file whenever a significant architectural, design, or coding decision is made, changed, or reversed.*

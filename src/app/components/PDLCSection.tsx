@@ -30,10 +30,8 @@ const PHASE_CONFIG: PhaseConfig[] = [
     cards: [
       { id: 'ps-1', frontAccent: 'from-blue-600/20 to-blue-800/10', backBg: '#0F1E3A', icon: <BarChart2 className="w-6 h-6" /> },
       { id: 'ps-2', frontAccent: 'from-blue-600/20 to-indigo-800/10', backBg: '#0F1E3A', icon: <Target className="w-6 h-6" /> },
-      { id: 'ps-3', frontAccent: 'from-blue-700/20 to-blue-900/10', backBg: '#0F1E3A', icon: <TrendingUp className="w-6 h-6" /> },
       { id: 'ps-4', frontAccent: 'from-indigo-600/20 to-blue-800/10', backBg: '#0F1E3A', icon: <Target className="w-6 h-6" /> },
       { id: 'ps-5', frontAccent: 'from-blue-500/20 to-blue-900/10', backBg: '#0F1E3A', icon: <Map className="w-6 h-6" /> },
-      { id: 'ps-6', frontAccent: 'from-blue-800/20 to-indigo-900/10', backBg: '#0F1E3A', icon: <Users2 className="w-6 h-6" /> },
     ],
   },
   {
@@ -90,10 +88,8 @@ const DEFAULT_PHASES: EditablePhase[] = [
     cards: [
       { id: 'ps-1', title: 'Market & Competitive Research', subtitle: 'Landscape analysis', description: 'Analyse the competitive landscape and identify market positioning opportunities. Understand how peers in public and private sector address the same problem.', bullets: ['Competitor benchmarking', 'Market sizing & opportunity', 'Gap analysis', 'PEST analysis', 'Positioning differentiation'] },
       { id: 'ps-2', title: 'Vision, Mission & SWOT', subtitle: 'Strategic foundation', description: 'Define the product vision, mission, and strategic objectives. Conduct a SWOT analysis to ensure the direction is sound and defensible.', bullets: ['Product vision statement', 'Mission articulation', 'SWOT mapping', 'Strategic objectives', 'Success criteria definition'] },
-      { id: 'ps-3', title: 'Business Case Analysis', subtitle: 'Value justification', description: 'Build a compelling business case that quantifies value and justifies investment in the platform, using evidence from research and user data.', bullets: ['ROI modelling', 'Cost-benefit analysis', 'Risk assessment', 'Investment phasing', 'Stakeholder sign-off'] },
       { id: 'ps-4', title: 'OKR Definition', subtitle: 'Measurable outcomes', description: 'Define Objectives and Key Results to track product success, align teams, and create accountability at every level of the organisation.', bullets: ['Objective setting', 'Key results design', 'Metrics framework', 'Quarterly review cadence', 'OKR tooling setup'] },
       { id: 'ps-5', title: 'Product Roadmap', subtitle: 'Delivery planning', description: 'Create a prioritised roadmap that aligns delivery phases with strategic goals and communicates intent clearly to all stakeholders.', bullets: ['Feature prioritisation (RICE/MoSCoW)', 'Quarter-by-quarter planning', 'Dependency mapping', 'Milestone definition', 'Change management process'] },
-      { id: 'ps-6', title: 'Stakeholder Mapping', subtitle: 'Governance & compliance', description: 'Identify primary, secondary, and legal stakeholders to ensure inclusive and compliant delivery across the public sector landscape.', bullets: ['Customer segmentation', 'Legal & compliance mapping', 'Governance structure', 'Comms & engagement plan', 'RACI definition'] },
     ],
   },
   {
@@ -127,7 +123,7 @@ const DEFAULT_PHASES: EditablePhase[] = [
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function usePhases() {
-  const [phases, setPhases] = useFirebaseSync<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
+  const [phases, setPhases, flushPhases] = useFirebaseSync<EditablePhase[]>('pdlcPhases', DEFAULT_PHASES);
 
   const updatePhase = useCallback((phaseId: string, field: keyof EditablePhase, value: string) => {
     setPhases(prev => prev.map(p => p.id === phaseId ? { ...p, [field]: value } : p));
@@ -172,13 +168,13 @@ function usePhases() {
     ));
   }, [setPhases]);
 
-  return { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet };
+  return { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet, flushPhases };
 }
 
 // ─── Card detail modal ────────────────────────────────────────────────────────
 
 function CardModal({
-  card, phaseId, config, phaseTagColor, open, onClose,
+  card, phaseId, config, phaseTagColor, open, onClose, onFlush,
   updateCard, updateBullet, addBullet, removeBullet,
 }: {
   card: EditableCard;
@@ -187,13 +183,14 @@ function CardModal({
   phaseTagColor: string;
   open: boolean;
   onClose: () => void;
+  onFlush: () => void;
   updateCard: (field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (idx: number, value: string) => void;
   addBullet: () => void;
   removeBullet: (idx: number) => void;
 }) {
   return (
-    <Dialog.Root open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog.Root open={open} onOpenChange={v => { if (!v) { onFlush(); onClose(); } }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50" />
         <Dialog.Content aria-describedby={undefined} className="fixed inset-0 flex items-center justify-center z-50 p-6 outline-none">
@@ -293,13 +290,14 @@ function CardModal({
 // ─── Flip card ────────────────────────────────────────────────────────────────
 
 function FlipCard({
-  card, phaseId, config, phaseTagColor,
+  card, phaseId, config, phaseTagColor, onFlush,
   updateCard, updateBullet, addBullet, removeBullet,
 }: {
   card: EditableCard;
   phaseId: string;
   config: PhaseConfig['cards'][number];
   phaseTagColor: string;
+  onFlush: () => void;
   updateCard: (field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (idx: number, value: string) => void;
   addBullet: () => void;
@@ -354,17 +352,17 @@ function FlipCard({
 
           {/* Back */}
           <div
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, background: config.backBg }}
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
             className="rounded-xl border border-slate-200 bg-white flex flex-col p-4 overflow-hidden"
           >
             <p
-              className="text-[11px] text-slate-700 leading-relaxed mb-3 flex-1 line-clamp-3"
+              className="text-[11px] text-slate-800 leading-relaxed mb-3 flex-1 line-clamp-3"
               dangerouslySetInnerHTML={{ __html: card.description || '<em>No description yet</em>' }}
             />
             <ul className="space-y-1 mb-3">
               {card.bullets.slice(0, 3).map((b, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-600">
-                  <span className="w-1 h-1 rounded-full bg-slate-400 flex-shrink-0" />
+                <li key={i} className="flex items-center gap-1.5 text-[10px] text-slate-700">
+                  <span className="w-1 h-1 rounded-full bg-slate-500 flex-shrink-0" />
                   {b}
                 </li>
               ))}
@@ -382,7 +380,7 @@ function FlipCard({
       <CardModal
         card={card} phaseId={phaseId} config={config}
         phaseTagColor={phaseTagColor}
-        open={modalOpen} onClose={() => setModalOpen(false)}
+        open={modalOpen} onClose={() => setModalOpen(false)} onFlush={onFlush}
         updateCard={updateCard}
         updateBullet={updateBullet}
         addBullet={addBullet}
@@ -580,11 +578,12 @@ function PhaseVideoSnippet({
 // ─── Phase section ────────────────────────────────────────────────────────────
 
 function PhaseSection({
-  phase, config,
+  phase, config, onFlush,
   updatePhase, updateCard, updateBullet, addBullet, removeBullet,
 }: {
   phase: EditablePhase;
   config: PhaseConfig;
+  onFlush: () => void;
   updatePhase: (field: keyof EditablePhase, value: string) => void;
   updateCard: (cardId: string, field: keyof EditableCard, value: string | string[]) => void;
   updateBullet: (cardId: string, idx: number, value: string) => void;
@@ -635,6 +634,7 @@ function PhaseSection({
               phaseId={phase.id}
               config={cardConfig}
               phaseTagColor={config.tagColor}
+              onFlush={onFlush}
               updateCard={(field, value) => updateCard(card.id, field, value)}
               updateBullet={(idx, value) => updateBullet(card.id, idx, value)}
               addBullet={() => addBullet(card.id)}
@@ -656,14 +656,15 @@ function PhaseSection({
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function PDLCSection() {
-  const { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet } = usePhases();
+  const { phases, updatePhase, updateCard, updateBullet, addBullet, removeBullet, flushPhases } = usePhases();
   const [saving, setSaving] = useState(false);
 
   const handleSave = () => {
+    flushPhases();
     setSaving(true);
     setTimeout(() => setSaving(false), 1200);
     toast.success('All changes saved', {
-      description: 'Your PDLC content has been saved to local storage.',
+      description: 'Your PDLC content has been saved to Firebase.',
       duration: 3000,
     });
   };
@@ -743,6 +744,7 @@ export function PDLCSection() {
               <PhaseSection
                 phase={phase}
                 config={pc}
+                onFlush={flushPhases}
                 updatePhase={(field, value) => updatePhase(pc.id, field, value)}
                 updateCard={(cardId, field, value) => updateCard(pc.id, cardId, field, value)}
                 updateBullet={(cardId, idx, value) => updateBullet(pc.id, cardId, idx, value)}
