@@ -11,6 +11,7 @@ import { PersonaCard } from './components/PersonaCard';
 import { ProgressTracker } from './components/ProgressTracker';
 import { MarketResearchGrid } from './components/MarketResearchGrid';
 import { PDLCSection } from './components/PDLCSection';
+import { PasswordGate } from './components/PasswordGate';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
 import { SEED_VERSION, SEED_PROBLEM_STATEMENT, SEED_USER_SEGMENTS, SEED_MARKET_RESEARCH } from './data/seedData';
 
@@ -92,6 +93,7 @@ export default function App() {
   };
 
   return (
+    <PasswordGate>
     <DndProvider backend={HTML5Backend}>
       <Toaster theme="light" position="bottom-right" richColors />
       <div
@@ -306,5 +308,6 @@ export default function App() {
         </div>
       </div>
     </DndProvider>
+    </PasswordGate>
   );
 }
