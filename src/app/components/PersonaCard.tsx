@@ -1,7 +1,17 @@
 import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X, Target, AlertTriangle, Zap, Lightbulb, Edit2, Check } from 'lucide-react';
+import { X, Target, AlertTriangle, Zap, Lightbulb, Edit2, Check, Video } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+
+function toEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  // YouTube watch or short URL → embed
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  // Direct video file
+  if (/\.(mp4|webm|ogg)(\?|$)/i.test(url)) return url;
+  return null;
+}
 
 interface PersonaCardProps {
   imageUrl: string;
@@ -10,6 +20,7 @@ interface PersonaCardProps {
   painPoints: string;
   motivators: string;
   opportunities: string;
+  videoUrl?: string;
   onUpdate: (field: string, value: string) => void;
 }
 
@@ -72,11 +83,14 @@ function SectionBlock({
 }
 
 export function PersonaCard({
-  imageUrl, title, goals, painPoints, motivators, opportunities, onUpdate
+  imageUrl, title, goals, painPoints, motivators, opportunities, videoUrl = '', onUpdate
 }: PersonaCardProps) {
   const [open, setOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
+  const [editingVideo, setEditingVideo] = useState(false);
+  const [tempVideo, setTempVideo] = useState(videoUrl);
+  const embedUrl = toEmbedUrl(videoUrl);
   const firstGoal = goals.split('\n').filter(Boolean)[0] || '';
 
   return (
@@ -164,6 +178,67 @@ export function PersonaCard({
                   <Edit2 className="w-4 h-4 opacity-0 group-hover/title:opacity-40 transition-opacity" />
                 </h2>
               )}
+
+              {/* Video section */}
+              <div className="mb-8 border border-slate-200 rounded-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <Video className="w-4 h-4 text-slate-400" />
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    Persona Video
+                  </span>
+                  <button
+                    onClick={() => { setEditingVideo(!editingVideo); setTempVideo(videoUrl); }}
+                    className="ml-auto text-slate-400 hover:text-slate-700 transition-colors p-1 rounded hover:bg-slate-200"
+                  >
+                    {editingVideo ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Edit2 className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                {editingVideo ? (
+                  <div className="p-4 space-y-2">
+                    <input
+                      value={tempVideo}
+                      onChange={e => setTempVideo(e.target.value)}
+                      placeholder="Paste a YouTube or direct video URL…"
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      autoFocus
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => setEditingVideo(false)}
+                        className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => { onUpdate('videoUrl', tempVideo); setEditingVideo(false); }}
+                        className="text-xs text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : embedUrl ? (
+                  embedUrl.includes('youtube.com/embed') ? (
+                    <iframe
+                      src={embedUrl}
+                      title="Persona video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full aspect-video border-0"
+                    />
+                  ) : (
+                    <video src={embedUrl} controls className="w-full aspect-video bg-black" />
+                  )
+                ) : (
+                  <div
+                    onClick={() => setEditingVideo(true)}
+                    className="flex flex-col items-center justify-center gap-2 py-8 text-slate-400 cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    <Video className="w-6 h-6" />
+                    <span className="text-xs">Click to add a video URL</span>
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-x-10 border-t border-slate-200 pt-8">
                 <SectionBlock

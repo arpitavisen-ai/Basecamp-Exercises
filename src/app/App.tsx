@@ -257,6 +257,7 @@ export default function App() {
                     painPoints={segment.painPoints}
                     motivators={segment.motivators}
                     opportunities={segment.opportunities}
+                    videoUrl={segment.videoUrl ?? ''}
                     onUpdate={(field, value) => updateUserSegment(key, field, value)}
                   />
                 ))}
