@@ -10,6 +10,7 @@ import { KanbanBoard } from './components/KanbanBoard';
 import { PersonaCard } from './components/PersonaCard';
 import { ProgressTracker } from './components/ProgressTracker';
 import { MarketResearchGrid } from './components/MarketResearchGrid';
+import { PrototypeDetailView } from './components/PrototypeDetailView';
 import { PDLCSection } from './components/PDLCSection';
 import { PasswordGate } from './components/PasswordGate';
 import { useFirebaseSync } from './hooks/useFirebaseSync';
@@ -21,6 +22,7 @@ export default function App() {
     SEED_PROBLEM_STATEMENT
   );
   const [editingStatement, setEditingStatement] = useState(false);
+  const [artefactDetailId, setArtefactDetailId] = useState<string | null>(null);
   const [tempStatement, setTempStatement] = useState(problemStatement);
 
   const [userSegments, setUserSegments, flushUserSegments] = useFirebaseSync(
@@ -266,17 +268,22 @@ export default function App() {
 
             {/* Market Research */}
             <Tabs.Content value="research">
-              <MarketResearchGrid
-                items={marketResearch}
-                onUpdate={updateMarketResearch}
-                onDelete={deleteMarketResearch}
-                onAdd={addMarketResearch}
-                onSave={() => {
-                  flushProblemStatement();
-                  flushUserSegments();
-                  flushMarketResearch();
-                }}
-              />
+              {artefactDetailId === 'artefact-prototype' ? (
+                <PrototypeDetailView onBack={() => setArtefactDetailId(null)} />
+              ) : (
+                <MarketResearchGrid
+                  items={marketResearch}
+                  onUpdate={updateMarketResearch}
+                  onDelete={deleteMarketResearch}
+                  onAdd={addMarketResearch}
+                  onSave={() => {
+                    flushProblemStatement();
+                    flushUserSegments();
+                    flushMarketResearch();
+                  }}
+                  onOpenDetail={setArtefactDetailId}
+                />
+              )}
             </Tabs.Content>
 
             {/* PDLC */}

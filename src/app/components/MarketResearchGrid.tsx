@@ -19,6 +19,7 @@ interface MarketResearchGridProps {
   onDelete: (id: string) => void;
   onAdd: (data: Omit<ResearchItem, 'id'>) => void;
   onSave?: () => void;
+  onOpenDetail?: (id: string) => void;
 }
 
 const ITEM_IMAGES: Record<string, string> = {
@@ -641,10 +642,18 @@ function ListCard({ item, index, onOpen }: { item: ResearchItem; index: number; 
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave }: MarketResearchGridProps) {
+export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave, onOpenDetail }: MarketResearchGridProps) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const handleOpen = (id: string) => {
+    if (onOpenDetail && id === 'artefact-prototype') {
+      onOpenDetail(id);
+    } else {
+      setOpenId(id);
+    }
+  };
 
   const handleSave = () => {
     if (!onSave) return;
@@ -654,9 +663,19 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave }:
     toast.success('All changes saved', { description: 'Your artefacts have been saved to Firebase.', duration: 3000 });
   };
 
-  const heroItem = items[0];
-  const gridItems = items.slice(1, 8);
-  const listItems = items.slice(8);
+  // Pin artefact-prototype into the grid section regardless of its position in the array
+  const reordered = (() => {
+    const idx = items.findIndex(i => i.id === 'artefact-prototype');
+    if (idx <= 7) return items;
+    const copy = [...items];
+    const [proto] = copy.splice(idx, 1);
+    copy.splice(1, 0, proto);
+    return copy;
+  })();
+
+  const heroItem = reordered[0];
+  const gridItems = reordered.slice(1, 8);
+  const listItems = reordered.slice(8);
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -701,13 +720,13 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave }:
 
       <div className="space-y-6">
         {heroItem && (
-          <HeroCard item={heroItem} index={0} onOpen={() => setOpenId(heroItem.id)} />
+          <HeroCard item={heroItem} index={0} onOpen={() => handleOpen(heroItem.id)} />
         )}
 
         {gridItems.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {gridItems.map((item, i) => (
-              <GridCard key={item.id} item={item} index={i + 1} onOpen={() => setOpenId(item.id)} />
+              <GridCard key={item.id} item={item} index={i + 1} onOpen={() => handleOpen(item.id)} />
             ))}
           </div>
         )}
@@ -725,14 +744,14 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave }:
               <div className="h-px flex-1 bg-slate-200" />
             </div>
             {listItems.map((item, i) => (
-              <ListCard key={item.id} item={item} index={i + 4} onOpen={() => setOpenId(item.id)} />
+              <ListCard key={item.id} item={item} index={i + 4} onOpen={() => handleOpen(item.id)} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Detail modals for each item */}
-      {items.map((item, index) => (
+      {/* Detail modals for each item — prototype has its own detail view, skip modal */}
+      {items.filter(item => item.id !== 'artefact-prototype').map((item, index) => (
         <ItemModal
           key={item.id}
           item={item}

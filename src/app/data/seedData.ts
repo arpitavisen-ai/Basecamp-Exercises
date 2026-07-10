@@ -1,4 +1,4 @@
-export const SEED_VERSION = 7;
+export const SEED_VERSION = 8;
 
 export const SEED_PROBLEM_STATEMENT = `NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards.`;
 
@@ -726,5 +726,11 @@ export const SEED_MARKET_RESEARCH = [
 <li><strong>CQC risk:</strong> A single 'Inadequate' rating on Well-Led costs £200k+ in remediation and reputational damage. One prevented inadequate rating pays for 4 years of platform cost.</li>
 <li><strong>10YHP compliance:</strong> Non-compliance with near-real-time feedback mandate = regulatory exposure from Q1 2026.</li>
 </ul>`)
+  },
+  {
+    id: 'artefact-prototype',
+    title: 'Prototype',
+    description: 'A high-fidelity interactive prototype of the NHS Patient Feedback Intelligence Platform — AI-classified FFT themes, ward risk signals, persona-specific dashboards, and board-ready exports. Click to explore the version history.',
+    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=600&fit=crop&auto=format',
   },
 ];

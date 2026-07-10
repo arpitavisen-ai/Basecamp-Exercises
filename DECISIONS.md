@@ -147,6 +147,15 @@ npm run promote      ← when happy: merges develop→main, pushes, triggers pro
 
 ---
 
+### DD-09 · Prototype artefact opens an in-tab detail view via state switch
+**Status:** Active  
+**Date:** 2026-07-08  
+**Decision:** Clicking the Prototype card in the Artefacts tab replaces the `MarketResearchGrid` with a `PrototypeDetailView` component, controlled by `artefactDetailId` state in `App.tsx`. A back button returns to the grid. The Prototype card does not open the standard `ItemModal`; `MarketResearchGrid` intercepts its click via an `onOpenDetail` callback and the modal is skipped by filtering `artefact-prototype` from the modals render.  
+**Rationale:** The app has no router. An in-tab state switch is the established pattern (matches how the app handles all "navigation") and requires no new dependencies. The same `onOpenDetail` callback is available for future artefacts that need their own detail views.  
+**Trade-off:** The back button does not update the URL, so deep-linking is not possible. Acceptable for a demo tool; if URL-based navigation is added later, this state can be promoted to a query param.
+
+---
+
 ## Coding Decisions / Best Practices
 
 ### CD-01 · Custom `useFirebaseSync` hook as the single data access pattern
@@ -195,6 +204,17 @@ npm run promote      ← when happy: merges develop→main, pushes, triggers pro
 
 ---
 
+### CD-10 · Prototype version HTML stored as raw strings in Firebase RTDB
+**Status:** Active  
+**Date:** 2026-07-08  
+**Decision:** Each uploaded `.html` prototype file is read client-side with `FileReader.readAsText()` and stored as a raw HTML string inside the `PrototypeVersion` object. The full array is persisted to Firebase at the `prototypeVersions` path, serialised as a JSON string per AD-02. To open a version, the HTML string is wrapped in a `Blob` and opened via `URL.createObjectURL` in a new browser tab — never injected into the host DOM.  
+**Rationale:** Firebase Storage is not configured for this project (the `storageBucket` field in `firebase.ts` is auto-generated but `getStorage` is never called). Storing HTML as a string in RTDB is consistent with how the existing `report` field works for artefact PDFs — no new infra needed. Prototype files are typically 50–150 KB; five versions totals under 1 MB, well within RTDB's 10 MB node limit.  
+**Trade-off:** Large or numerous prototype HTML files could bloat the DB. If storage grows beyond ~2 MB, migrate `htmlContent` to Firebase Storage URLs (the field name stays the same; only the write/read path changes).  
+**Security:** The HTML is opened as an isolated standalone document via Blob URL, never via `innerHTML` or `dangerouslySetInnerHTML` into the host app. This prevents uploaded prototype code from touching the host's DOM.  
+**Where:** `src/app/components/PrototypeDetailView.tsx` — `handleAdd` (write), `openHtmlInNewTab` (read).
+
+---
+
 ### CD-07 · Rich text stored as HTML strings
 **Status:** Active  
 **Decision:** The `description` field on PDLC cards and the `richContent` field on artefacts store raw HTML strings. These are rendered with `dangerouslySetInnerHTML` inside controlled components.  
@@ -220,5 +240,5 @@ npm run promote      ← when happy: merges develop→main, pushes, triggers pro
 
 ---
 
-*Last updated: 2026-07-03 (added Technical Discovery Report artefact DD-07; updated AD-03 to document merge-by-ID strategy for marketResearch; SEED_VERSION bumped to 7)*  
+*Last updated: 2026-07-08 (added DD-09 prototype in-tab detail view; added CD-10 prototype version HTML storage; added artefact-prototype to SEED_MARKET_RESEARCH; SEED_VERSION bumped to 8)*  
 *Update this file whenever a significant architectural, design, or coding decision is made, changed, or reversed.*
