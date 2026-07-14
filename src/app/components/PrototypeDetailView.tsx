@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowLeft, Plus, ExternalLink, X, Upload, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, ExternalLink, X, Upload, Sparkles, Pencil } from 'lucide-react';
 import { useFirebaseSync } from '../hooks/useFirebaseSync';
 
 interface PrototypeVersion {
@@ -41,30 +41,36 @@ function openHtmlInNewTab(htmlContent: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-// ─── Add Version Modal ────────────────────────────────────────────────────────
+// ─── Version Modal (add + edit) ───────────────────────────────────────────────
 
-function AddVersionModal({
-  open,
-  onClose,
-  onAdd,
-}: {
+interface VersionModalProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (v: Omit<PrototypeVersion, 'id' | 'createdAt'>) => void;
-}) {
+  /** Present when editing an existing version */
+  initial?: PrototypeVersion;
+  onSave: (data: Omit<PrototypeVersion, 'id' | 'createdAt'>) => void;
+}
+
+function VersionModal({ open, onClose, initial, onSave }: VersionModalProps) {
+  const isEdit = Boolean(initial);
   const today = new Date().toISOString().split('T')[0];
-  const [label, setLabel] = useState('');
-  const [date, setDate] = useState(today);
-  const [note, setNote] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [htmlContent, setHtmlContent] = useState('');
+
+  const [label, setLabel] = useState(initial?.label ?? '');
+  const [date, setDate] = useState(initial?.date ?? today);
+  const [note, setNote] = useState(initial?.note ?? '');
+  const [fileName, setFileName] = useState(initial?.fileName ?? '');
+  const [htmlContent, setHtmlContent] = useState(initial?.htmlContent ?? '');
   const [fileError, setFileError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const reset = () => {
-    setLabel(''); setDate(today); setNote('');
-    setFileName(''); setHtmlContent(''); setFileError('');
+  const resetToInitial = () => {
+    setLabel(initial?.label ?? '');
+    setDate(initial?.date ?? today);
+    setNote(initial?.note ?? '');
+    setFileName(initial?.fileName ?? '');
+    setHtmlContent(initial?.htmlContent ?? '');
+    setFileError('');
     setSubmitting(false);
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -85,23 +91,24 @@ function AddVersionModal({
     reader.readAsText(file);
   };
 
+  // In edit mode htmlContent is pre-populated from the stored version, so it's always valid
   const canSubmit = label.trim() && date && note.trim() && htmlContent;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
     setSubmitting(true);
-    onAdd({ label: label.trim(), date, note: note.trim(), fileName, htmlContent });
-    reset();
+    onSave({ label: label.trim(), date, note: note.trim(), fileName, htmlContent });
+    resetToInitial();
     onClose();
   };
 
-  const labelId = 'add-version-label-id';
+  const labelId = 'version-modal-label-id';
 
   return (
     <Dialog.Root
       open={open}
-      onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}
+      onOpenChange={(v) => { if (!v) { resetToInitial(); onClose(); } }}
     >
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50" />
@@ -116,7 +123,7 @@ function AddVersionModal({
                 className="text-base font-semibold text-slate-900"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                Add prototype version
+                {isEdit ? 'Edit prototype version' : 'Add prototype version'}
               </Dialog.Title>
               <Dialog.Close asChild>
                 <button className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
@@ -187,7 +194,7 @@ function AddVersionModal({
                   className="block text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500 mb-1.5"
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
-                  HTML file *
+                  HTML file {isEdit ? '(re-upload to replace)' : '*'}
                 </label>
                 <label
                   htmlFor="pv-file"
@@ -213,6 +220,11 @@ function AddVersionModal({
                 {fileError && (
                   <p className="mt-1 text-xs text-red-500">{fileError}</p>
                 )}
+                {isEdit && !fileError && (
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Leave unchanged to keep the existing file.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
@@ -229,7 +241,7 @@ function AddVersionModal({
                   disabled={!canSubmit || submitting}
                   className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
                 >
-                  Add version
+                  {isEdit ? 'Save changes' : 'Add version'}
                 </button>
               </div>
             </form>
@@ -246,10 +258,12 @@ function VersionEntry({
   version,
   isLatest,
   isLast,
+  onEdit,
 }: {
   version: PrototypeVersion;
   isLatest: boolean;
   isLast: boolean;
+  onEdit: (v: PrototypeVersion) => void;
 }) {
   return (
     <div className="relative flex gap-4">
@@ -267,7 +281,7 @@ function VersionEntry({
 
       {/* Content */}
       <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-5'}`}>
-        <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors group">
           <div className="flex items-start justify-between gap-4 mb-2">
             <div className="flex items-center gap-2 flex-wrap">
               <h3
@@ -285,12 +299,21 @@ function VersionEntry({
                 </span>
               )}
             </div>
-            <span
-              className="text-[11px] text-slate-400 whitespace-nowrap flex-shrink-0 mt-0.5"
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              {formatDate(version.date)}
-            </span>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <span
+                className="text-[11px] text-slate-400 whitespace-nowrap mt-0.5"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                {formatDate(version.date)}
+              </span>
+              <button
+                onClick={() => onEdit(version)}
+                aria-label={`Edit ${version.label}`}
+                className="w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-slate-600 hover:bg-slate-100 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <p className="text-sm text-slate-600 leading-relaxed mb-4">{version.note}</p>
@@ -321,6 +344,7 @@ function VersionEntry({
 export function PrototypeDetailView({ onBack }: PrototypeDetailViewProps) {
   const [versions, setVersions] = useFirebaseSync<PrototypeVersion[]>('prototypeVersions', []);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingVersion, setEditingVersion] = useState<PrototypeVersion | null>(null);
 
   const sorted = [...versions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -333,6 +357,12 @@ export function PrototypeDetailView({ onBack }: PrototypeDetailViewProps) {
       createdAt: new Date().toISOString(),
     };
     setVersions((prev) => [...prev, newVersion]);
+  };
+
+  const handleUpdate = (data: Omit<PrototypeVersion, 'id' | 'createdAt'>) => {
+    if (!editingVersion) return;
+    const updated: PrototypeVersion = { ...editingVersion, ...data };
+    setVersions((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
   };
 
   return (
@@ -465,16 +495,24 @@ export function PrototypeDetailView({ onBack }: PrototypeDetailViewProps) {
                 version={version}
                 isLatest={i === 0}
                 isLast={i === sorted.length - 1}
+                onEdit={setEditingVersion}
               />
             ))}
           </div>
         )}
       </div>
 
-      <AddVersionModal
+      <VersionModal
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onAdd={handleAdd}
+        onSave={handleAdd}
+      />
+
+      <VersionModal
+        open={editingVersion !== null}
+        onClose={() => setEditingVersion(null)}
+        initial={editingVersion ?? undefined}
+        onSave={handleUpdate}
       />
     </div>
   );
