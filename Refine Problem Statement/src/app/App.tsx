@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import { Users, TrendingUp, ListChecks, Edit2, Check, Layers, FileText, Activity } from 'lucide-react';
+import { Users, ListChecks, Layers, FileText, Activity } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -30,7 +30,7 @@ export default function App() {
     SEED_PROBLEM_STATEMENT
   );
   const [editingStatement, setEditingStatement] = useState(false);
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('pdlc');
   const [nhsView, setNhsView] = useState<'start' | 'dashboard'>('start');
   const [artefactDetailId, setArtefactDetailId] = useState<string | null>(null);
   const [tempStatement, setTempStatement] = useState(problemStatement);
@@ -117,103 +117,30 @@ export default function App() {
                 </svg>
               </div>
               <span
-                className="text-sm font-semibold text-slate-900 tracking-tight"
+                className="text-base font-semibold text-slate-900 tracking-tight"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
-                Patient Feedback Intelligence Platform
+                S&amp;PE Product AI Pillar
               </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span
-                className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                NHS · Discovery Complete
-              </span>
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
           </div>
         </header>
 
         {/* Hero section */}
         <div className="max-w-[1400px] mx-auto px-8 pt-12 pb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start">
-            <div>
-              <p
-                className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-400 mb-4"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                S&amp;PE Product Demo
-              </p>
-              <h1
-                className="text-5xl font-semibold text-slate-900 leading-tight mb-6"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                AI in Product Management
-                <br />
-                <em className="font-normal text-slate-600">usecase: Feedback analysis for NHS</em>
-              </h1>
-              <div className="relative group">
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500/40 rounded-full" />
-                {editingStatement ? (
-                  <div className="pl-5">
-                    <textarea
-                      value={tempStatement}
-                      onChange={e => setTempStatement(e.target.value)}
-                      onBlur={() => { setProblemStatement(tempStatement); setEditingStatement(false); }}
-                      rows={5}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 leading-relaxed resize-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => { setProblemStatement(tempStatement); setEditingStatement(false); }}
-                      className="mt-2 flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300"
-                    >
-                      <Check className="w-3 h-3" /> Save
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="pl-5 cursor-pointer"
-                    onClick={() => { setEditingStatement(true); setTempStatement(problemStatement); }}
-                  >
-                    <p className="text-slate-600 leading-relaxed text-sm max-w-2xl">{problemStatement}</p>
-                    <button className="mt-2 flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-700 transition-colors opacity-0 group-hover:opacity-100">
-                      <Edit2 className="w-3 h-3" /> Edit statement
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Summary stats */}
-            <div className="grid grid-cols-2 gap-3 lg:pt-14">
-              {[
-                { label: 'User Personas', value: '3', sub: 'Chief Nurse · Quality Mgr · Ward Mgr' },
-                { label: 'Research Activities', value: `${marketResearch.length}`, sub: 'Items planned' },
-                { label: 'Tasks', value: '25', sub: 'In backlog' },
-                { label: 'Build Decision', value: 'GO', sub: 'Discovery complete · June 2026' },
-              ].map(stat => (
-                <div
-                  key={stat.label}
-                  className="bg-slate-50 rounded-xl border border-slate-200 px-4 py-4"
-                >
-                  <p
-                    className="text-[9px] uppercase tracking-[0.15em] text-slate-500 mb-1"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
-                  >
-                    {stat.label}
-                  </p>
-                  <p
-                    className="text-2xl font-semibold text-slate-900 mb-0.5"
-                    style={{ fontFamily: "'Playfair Display', serif" }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-slate-500">{stat.sub}</p>
-                </div>
-              ))}
-            </div>
+          <div>
+            <p
+              className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-400 mb-4"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              S&amp;PE Product Demo
+            </p>
+            <h1
+              className="text-5xl font-semibold text-slate-900 leading-tight mb-6"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              AI in Product Management
+            </h1>
           </div>
         </div>
 
@@ -228,11 +155,10 @@ export default function App() {
           >
             <Tabs.List className="flex gap-0 border-b border-slate-200 mb-10">
               {[
-                { value: 'users',    label: 'User Analysis', Icon: Users },
-                { value: 'research', label: 'Artefacts',     Icon: TrendingUp },
-                { value: 'pdlc',     label: 'AI in PDLC',    Icon: Layers },
-                { value: 'tasks',    label: 'Tasks',          Icon: ListChecks },
-                { value: 'script',   label: 'Draft Script',   Icon: FileText },
+                { value: 'pdlc',   label: 'AI in PDLC',       Icon: Layers },
+                { value: 'users',  label: 'Use Case - NHS Platform', Icon: Users },
+                { value: 'tasks',  label: 'Tasks',              Icon: ListChecks },
+                { value: 'script', label: 'Draft Script',       Icon: FileText },
               ].map(({ value, label, Icon }) => (
                 <Tabs.Trigger
                   key={value}
@@ -258,8 +184,60 @@ export default function App() {
               </Tabs.Trigger>
             </Tabs.List>
 
-            {/* User Analysis */}
+            {/* Use Case 2 */}
             <Tabs.Content value="users">
+              {/* NHS status badge */}
+              <div className="flex items-center justify-end gap-3 mb-6">
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500"
+                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                >
+                  NHS · Discovery Complete
+                </span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+
+              {/* Use Case and Problem Statement */}
+              <div className="mb-10 p-8 bg-slate-50 rounded-2xl border border-slate-200">
+                <h2
+                  className="text-3xl font-semibold text-slate-900 leading-tight mb-8"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  Use Case &amp; the Problem Statement
+                  <br />
+                  <em className="font-normal text-slate-600">Feedback analysis for NHS</em>
+                </h2>
+                <p className="text-slate-600 leading-relaxed text-sm max-w-4xl mb-8">
+                  NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards.
+                </p>
+
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { label: 'User Personas', value: '3', sub: 'Chief Nurse · Quality Mgr · Ward Mgr' },
+                    { label: 'Research Activities', value: `${marketResearch.length}`, sub: 'Items planned' },
+                    { label: 'Tasks', value: '25', sub: 'In backlog' },
+                    { label: 'Build Decision', value: 'GO', sub: 'Discovery complete · June 2026' },
+                  ].map(stat => (
+                    <div key={stat.label} className="bg-white rounded-xl border border-slate-200 px-4 py-4">
+                      <p
+                        className="text-[9px] uppercase tracking-[0.15em] text-slate-500 mb-1"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                      >
+                        {stat.label}
+                      </p>
+                      <p
+                        className="text-2xl font-semibold text-slate-900 mb-0.5"
+                        style={{ fontFamily: "'Playfair Display', serif" }}
+                      >
+                        {stat.value}
+                      </p>
+                      <p className="text-xs text-slate-500">{stat.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="mb-8">
                 <p
                   className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-1.5"
@@ -289,26 +267,26 @@ export default function App() {
                   />
                 ))}
               </div>
-            </Tabs.Content>
 
-            {/* Artefacts */}
-            <Tabs.Content value="research">
-              {artefactDetailId === 'artefact-prototype' ? (
-                <PrototypeDetailView onBack={() => setArtefactDetailId(null)} />
-              ) : (
-                <MarketResearchGrid
-                  items={marketResearch}
-                  onUpdate={updateMarketResearch}
-                  onDelete={deleteMarketResearch}
-                  onAdd={addMarketResearch}
-                  onSave={() => {
-                    flushProblemStatement();
-                    flushUserSegments();
-                    flushMarketResearch();
-                  }}
-                  onOpenDetail={setArtefactDetailId}
-                />
-              )}
+              {/* Artefacts — moved inline below personas */}
+              <div className="mt-14 pt-10 border-t border-slate-200">
+                {artefactDetailId === 'artefact-prototype' ? (
+                  <PrototypeDetailView onBack={() => setArtefactDetailId(null)} />
+                ) : (
+                  <MarketResearchGrid
+                    items={marketResearch}
+                    onUpdate={updateMarketResearch}
+                    onDelete={deleteMarketResearch}
+                    onAdd={addMarketResearch}
+                    onSave={() => {
+                      flushProblemStatement();
+                      flushUserSegments();
+                      flushMarketResearch();
+                    }}
+                    onOpenDetail={setArtefactDetailId}
+                  />
+                )}
+              </div>
             </Tabs.Content>
 
             {/* PDLC */}
@@ -367,7 +345,7 @@ export default function App() {
                   onBack={() => { setNhsView('start'); setActiveTab('users'); }}
                   onBuildLog={() => {
                     setNhsView('start');
-                    setActiveTab('research');
+                    setActiveTab('users');
                     setArtefactDetailId('artefact-prototype');
                   }}
                 />

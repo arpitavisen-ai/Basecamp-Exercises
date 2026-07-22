@@ -685,7 +685,7 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave, o
             className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-400 mb-2"
             style={{ fontFamily: "'JetBrains Mono', monospace" }}
           >
-            Research Agenda
+            Click any artefact to explore in depth
           </p>
           <h2
             className="text-3xl font-semibold text-slate-900 leading-tight"
@@ -693,28 +693,6 @@ export function MarketResearchGrid({ items, onUpdate, onDelete, onAdd, onSave, o
           >
             Artefact Details
           </h2>
-        </div>
-        <div className="flex items-center gap-3">
-          {onSave && (
-            <button
-              onClick={handleSave}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
-                saving
-                  ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white'
-              }`}
-            >
-              <Save className={`w-4 h-4 transition-transform ${saving ? 'scale-110' : ''}`} />
-              {saving ? 'Saved ✓' : 'Save All Changes'}
-            </button>
-          )}
-          <button
-            onClick={() => setAddOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Add Activity
-          </button>
         </div>
       </div>
 
