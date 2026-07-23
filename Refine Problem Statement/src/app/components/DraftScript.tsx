@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { exportScriptPptx } from '../lib/exportScriptPptx';
 import { InlineEdit, RichTextEditor } from './RichTextEditor';
 import { useFirebaseSync } from '../hooks/useFirebaseSync';
 import { SEED_DRAFT_SCRIPT, type ScriptBlock } from '../data/seedData';
@@ -27,6 +28,16 @@ export function DraftScript() {
   );
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [activeNav, setActiveNav] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportScriptPptx(blocks);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const update = (id: string, field: keyof ScriptBlock, value: string) => {
     setBlocks(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
@@ -121,6 +132,14 @@ export function DraftScript() {
             </h2>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" />
+              {exporting ? 'Exporting…' : 'Download .pptx'}
+            </button>
             <button
               onClick={() => flushBlocks()}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
