@@ -142,7 +142,7 @@ export function PersonaCard({
           <Dialog.Overlay className="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50" />
           <Dialog.Content
             aria-describedby={undefined}
-            className="fixed inset-y-0 right-0 w-full max-w-2xl bg-white border-l border-slate-200 z-50 shadow-2xl outline-none overflow-hidden"
+            className="fixed inset-0 m-auto w-full max-w-2xl h-[90vh] bg-white rounded-2xl border border-slate-200 z-50 shadow-2xl outline-none overflow-hidden"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
             <Dialog.Title className="sr-only">{title} — User Persona</Dialog.Title>
