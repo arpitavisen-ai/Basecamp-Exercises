@@ -2,6 +2,10 @@ import { Page, expect } from '@playwright/test';
 
 /** Navigate to the app and wait for Firebase to hydrate data (spinner gone + content visible). */
 export async function loadApp(page: Page) {
+  // Bypass the session password gate so tests never hit the login screen
+  await page.addInitScript(() => {
+    sessionStorage.setItem('app_auth', '1');
+  });
   await page.goto('/');
   // Wait for the hero problem-statement section to appear (proves Firebase seeded & React rendered)
   await expect(page.locator('text=Patient Feedback').first()).toBeVisible({ timeout: 25_000 });
