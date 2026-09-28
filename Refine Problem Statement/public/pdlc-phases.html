@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Use Case – NHS Platform · S&PE Product AI Pillar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+/* ============================================================
+   1 · TOKENS — S&PE Crucible (verbatim from spe-framework-v2.3.html)
+   ============================================================ */
+:root {
+  --background: #ffffff;
+  --layer: #f4f4f4;
+  --layer-hover: #e8e8e8;
+  --text-primary: #161616;
+  --text-secondary: #525252;
+  --text-on-color: #ffffff;
+  --border-subtle: #e0e0e0;
+  --border-strong: #8d8d8d;
+  --hover-inverse: #353535;
+
+  --accent: #5A2D82;
+  --accent-hover: #46236a;
+  --focus: var(--accent);
+
+  --support-error: #b30f0f;
+  --support-warning: #b05a00;
+  --support-success: #006747;
+
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --type-display: clamp(50px, 7vw, 110px);
+  --type-page-title: clamp(42px, 6vw, 86px);
+  --type-section-title: 38px;
+  --type-card-title: 24px;
+  --type-row-title: 22px;
+  --type-body-lead: 21px;
+  --type-body: 16px;
+  --type-body-compact: 14px;
+  --type-label: 12px;
+
+  --sp-01: 4px;   --sp-02: 8px;   --sp-03: 12px;  --sp-04: 16px;
+  --sp-05: 20px;  --sp-06: 24px;  --sp-07: 32px;  --sp-08: 40px;
+  --sp-09: 48px;  --sp-10: 64px;  --sp-11: 72px;  --sp-12: 80px;
+  --sp-13: 100px;
+
+  --grid-max: 1400px;
+  --gutter: var(--sp-06);
+  --header-height: var(--sp-09);
+  --measure-prose: 62ch;
+
+  --radius: 0;
+  --border: 1px solid var(--border-subtle);
+  --transition: 110ms cubic-bezier(0.2, 0, 0.38, 0.9);
+
+  /* Deep Focus theme */
+  --canvas: #F1EFF4;
+  --panel: #FFFFFF;
+  --rail-bg: #1C1128;
+  --rail-bg-soft: #2A1B3D;
+  --rail-line: #3E2E55;
+  --rail-text: #F3EFF8;
+  --rail-text-dim: #B3A6C4;
+  --accent-on-dark: #C79BEC;
+  --accent-fill: #6B2F9C;
+  --accent-edge: #E5C9FF;
+  --accent-wash: rgba(90, 45, 130, 0.07);
+  --bar-idle: #B9A8CE;
+  --loop: #0F766E;
+  --loop-soft: #E4F3F1;
+  --loop-text: #0A5B55;
+}
+
+/* ============================================================
+   2 · RESET + BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ============================================================
+   3 · TYPOGRAPHY UTILITIES
+   ============================================================ */
+.mono { font-family: var(--font-mono); }
+
+/* .serif was Playfair Display — now IBM Plex Sans weight 300 (editorial feel) */
+.serif {
+  font-family: var(--font-sans);
+  font-weight: 300;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  display: block;
+  margin: 0;
+}
+
+/* ============================================================
+   4 · HEADER
+   ============================================================ */
+header {
+  background: #161616;
+  color: #ffffff;
+  border-bottom: 1px solid #2a2a2a;
+  padding: 0 var(--sp-07);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+}
+
+header > div {
+  max-width: var(--grid-max);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-03);
+  width: 100%;
+}
+
+/* Logo icon box */
+header > div > div:first-child {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+header > div > div:first-child svg {
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+}
+
+/* Brand text */
+header .serif,
+header span {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--type-body);
+  color: #ffffff;
+}
+
+/* ============================================================
+   5 · TAB BAR
+   ============================================================ */
+header + div {
+  background: var(--layer);
+  border-bottom: var(--border);
+  padding: 0 var(--sp-07);
+}
+
+header + div > div {
+  max-width: var(--grid-max);
+  margin-inline: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Every direct div child of the tab row = a tab item */
+header + div > div > div {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-02);
+  padding: var(--sp-03) var(--sp-05);
+  font-size: var(--type-body-compact);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  cursor: default;
+  white-space: nowrap;
+}
+
+/* Active tab — second tab item */
+header + div > div > div:nth-child(2) {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Tab separator bar (4th child = the w-px div) */
+header + div > div > div:nth-child(4) {
+  width: 1px;
+  padding: 0;
+  margin: var(--sp-02) var(--sp-02);
+  background: var(--border-subtle);
+  border: none;
+  align-self: stretch;
+}
+
+/* SVG icons in tabs */
+header + div > div > div svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+header + div > div > div:nth-child(2) svg {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* "Built" badge */
+header + div span.mono {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--accent-wash);
+  color: var(--accent);
+  border: 1px solid rgba(90,45,130,0.3);
+  border-radius: var(--radius);
+  padding: 2px 6px;
+  margin-left: 4px;
+}
+
+/* ============================================================
+   6 · MAIN LAYOUT
+   ============================================================ */
+main {
+  max-width: var(--grid-max);
+  margin-inline: auto;
+  padding: var(--sp-08) var(--sp-07) var(--sp-12);
+}
+
+/* ── STATUS BADGE ROW ── */
+main > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-03);
+  margin-bottom: var(--sp-06);
+}
+
+/* Pulse dot */
+main > div:first-child > div {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── SECTION 1: PROBLEM STATEMENT ── */
+main > div:nth-child(2) {
+  margin-bottom: var(--sp-08);
+  padding: var(--sp-07);
+  background: var(--layer);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+main > div:nth-child(2) h2 {
+  font-family: var(--font-sans);
+  font-size: var(--type-section-title);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin: 0 0 var(--sp-07);
+}
+
+main > div:nth-child(2) h2 em {
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+main > div:nth-child(2) > p {
+  color: var(--text-secondary);
+  font-size: var(--type-body-compact);
+  line-height: 1.6;
+  max-width: 72ch;
+  margin: 0 0 var(--sp-07);
+}
+
+/* Stat tiles grid */
+main > div:nth-child(2) > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-03);
+}
+
+@media (max-width: 768px) {
+  main > div:nth-child(2) > div { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Individual stat tiles */
+main > div:nth-child(2) > div > div {
+  background: var(--panel);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-04);
+}
+
+/* Stat numbers (.serif inside tiles) */
+main > div:nth-child(2) > div > div .serif,
+main > div:nth-child(2) > div > div p.serif {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 26px;
+  color: var(--text-primary);
+  display: block;
+  margin: 2px 0;
+  line-height: 1.1;
+}
+
+/* GO stat — accent instead of emerald */
+main > div:nth-child(2) > div > div:last-child .serif,
+main > div:nth-child(2) > div > div:last-child p.serif {
+  color: var(--accent);
+}
+
+/* Sub-labels in tiles */
+main > div:nth-child(2) > div > div p:last-child {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── SECTION 2: PERSONAS HEADER ── */
+main > div:nth-child(3) {
+  margin-bottom: var(--sp-04);
+}
+
+main > div:nth-child(3) h2 {
+  font-family: var(--font-sans);
+  font-size: var(--type-card-title);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 4px 0 0;
+}
+
+/* ── SECTION 4: ARTEFACTS WRAPPER ── */
+main > div:nth-child(5) {
+  margin-top: var(--sp-11);
+  padding-top: var(--sp-08);
+  border-top: var(--border);
+}
+
+main > div:nth-child(5) > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--sp-07);
+}
+
+main > div:nth-child(5) > div:first-child h2 {
+  font-family: var(--font-sans);
+  font-size: var(--type-card-title);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 4px 0 0;
+}
+
+main > div:nth-child(5) > div:first-child > span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: var(--sp-02);
+}
+
+/* Artefacts grid */
+main > div:nth-child(5) > div:last-child {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-05);
+}
+
+@media (max-width: 1024px) {
+  main > div:nth-child(5) > div:last-child { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  main > div:nth-child(5) > div:last-child { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   7 · PERSONA GRID CARDS
+   ============================================================ */
+main > div:nth-child(4) {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-06);
+  margin-bottom: var(--sp-11);
+}
+
+@media (max-width: 1024px) {
+  main > div:nth-child(4) { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  main > div:nth-child(4) { grid-template-columns: 1fr; }
+}
+
+.persona-grid-card {
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: var(--border);
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.persona-grid-card:hover {
+  border-color: var(--border-strong);
+  background: var(--layer);
+}
+
+.persona-grid-card:hover .hero-img { transform: scale(1.03); }
+
+.hero-img {
+  transition: transform 0.5s ease;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card image container */
+.persona-grid-card > div:first-child {
+  position: relative;
+  height: 16rem;
+  background: var(--layer);
+  overflow: hidden;
+}
+
+/* Gradient overlay inside persona card image */
+.persona-grid-card > div:first-child > div {
+  position: absolute;
+  inset: 0;
+}
+
+/* Card body */
+.persona-grid-card > div:last-child {
+  padding: var(--sp-06);
+}
+
+/* "User Persona" chip badge */
+.persona-grid-card .mono {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: var(--accent-wash);
+  border: 1px solid rgba(90,45,130,0.25);
+  border-radius: var(--radius);
+  padding: 3px var(--sp-03);
+  margin-bottom: var(--sp-03);
+}
+
+/* Card title */
+.persona-grid-card h3 {
+  font-family: var(--font-sans);
+  font-size: var(--type-card-title);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-02);
+}
+
+/* Card description */
+.persona-grid-card > div:last-child > p {
+  font-size: var(--type-body-compact);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 var(--sp-05);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* "View full profile" link row */
+.persona-grid-card > div:last-child > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--type-body-compact);
+  color: var(--accent);
+}
+
+.persona-grid-card > div:last-child > div svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ============================================================
+   8 · ARTEFACT CARDS
+   ============================================================ */
+.artefact-card {
+  cursor: pointer;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: var(--border);
+  overflow: hidden;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.artefact-card:hover {
+  background: var(--layer);
+  border-color: var(--border-strong);
+}
+
+.artefact-card > div:first-child {
+  height: 9rem;
+  overflow: hidden;
+}
+
+.artefact-card > div:first-child img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.artefact-card > div:last-child {
+  padding: var(--sp-05);
+}
+
+/* Category badge — override all the colored variants */
+.artefact-card span.mono {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  background: var(--accent-wash);
+  border: 1px solid rgba(90,45,130,0.2);
+  border-radius: var(--radius);
+  padding: 2px var(--sp-02);
+  display: inline-block;
+  margin-bottom: var(--sp-02);
+}
+
+.artefact-card h3 {
+  font-family: var(--font-sans);
+  font-size: var(--type-body-compact);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.artefact-card > div:last-child > p {
+  font-size: var(--type-label);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============================================================
+   9 · FOOTER
+   ============================================================ */
+footer {
+  border-top: var(--border);
+  background: var(--panel);
+  padding: var(--sp-06) var(--sp-07);
+}
+
+footer > div {
+  max-width: var(--grid-max);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+footer span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   10 · MODAL OVERLAY
+   ============================================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(22,22,22,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-06);
+}
+
+.modal-overlay.open { display: flex; }
+
+/* ── PERSONA MODAL DIALOG (height:90vh in inline style) ── */
+.modal-overlay > div[style^="height"] {
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: var(--border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 42rem;
+}
+
+/* ── ARTEFACT MODAL DIALOG (max-height:90vh in inline style) ── */
+.modal-overlay > div[style^="max-height"] {
+  background: var(--panel);
+  border-radius: var(--radius);
+  border: var(--border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 48rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Artefact modal image header */
+.modal-overlay > div[style^="max-height"] > div:first-child {
+  position: relative;
+  flex-shrink: 0;
+  height: 10rem;
+  overflow: hidden;
+}
+
+.modal-overlay > div[style^="max-height"] > div:first-child img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Gradient overlay in artefact modal image */
+.modal-overlay > div[style^="max-height"] > div:first-child > div:first-of-type {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Badge + title container at bottom of image */
+.modal-overlay > div[style^="max-height"] > div:first-child > div:last-of-type {
+  position: absolute;
+  bottom: 12px;
+  left: 20px;
+}
+
+/* Category badge in artefact modal image overlay */
+.modal-overlay > div[style^="max-height"] > div:first-child span.mono {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-radius: var(--radius);
+  padding: 2px 10px;
+  display: inline-block;
+}
+
+/* Title in artefact modal image overlay */
+.modal-overlay > div[style^="max-height"] > div:first-child h3 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  color: #ffffff;
+  margin: 4px 0 0;
+}
+
+/* Scrollable prose area */
+.modal-overlay .overflow-y-auto {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-06);
+}
+
+/* ============================================================
+   11 · FLIP CARDS
+   ============================================================ */
+.flip-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4,0,0.2,1);
+}
+
+.flip-wrap.flipped { transform: rotateY(180deg); }
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow-y: auto;
+  background: var(--panel);
+}
+
+.face-back { transform: rotateY(180deg); }
+
+/* Front face: image container */
+.face > div:first-child {
+  position: relative;
+  overflow: hidden;
+  background: var(--layer);
+  flex-shrink: 0;
+}
+
+/* Gradient overlay inside face image */
+.face > div:first-child > div {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Front face: body */
+.face > div:not(:first-child):not(.face-back > div) {
+  padding: var(--sp-06) var(--sp-07) var(--sp-08);
+}
+
+/* "User Persona" / "Persona Profile" chip in modal face */
+.face .mono {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  background: var(--accent-wash);
+  border: 1px solid rgba(90,45,130,0.25);
+  border-radius: var(--radius);
+  padding: 3px var(--sp-03);
+  margin-bottom: var(--sp-04);
+}
+
+/* Modal persona heading */
+.face h2 {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--sp-06);
+}
+
+/* Video panel */
+.face > div > div.mb-6 {
+  margin-bottom: var(--sp-06);
+  border: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.face > div > div.mb-6 > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-02);
+  padding: var(--sp-03) var(--sp-04);
+  border-bottom: var(--border);
+  background: var(--layer);
+}
+
+.face > div > div.mb-6 > div:first-child span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-secondary);
+}
+
+.face > div > div.mb-6 > div:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-02);
+  padding: var(--sp-07) 0;
+  color: var(--text-secondary);
+}
+
+.face > div > div.mb-6 > div:last-child span {
+  font-size: var(--type-label);
+}
+
+/* "View persona details" / "Back to overview" flip buttons */
+button[onclick*="flip"] {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-02);
+  padding: var(--sp-03) var(--sp-04);
+  margin-top: var(--sp-02);
+  border-radius: var(--radius);
+  border: var(--border);
+  background: var(--layer);
+  font-size: var(--type-body-compact);
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+button[onclick*="flip"]:hover {
+  background: var(--layer-hover);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+button[onclick*="flip"] svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Back face body */
+.face-back > div {
+  padding: var(--sp-11) var(--sp-07) var(--sp-08);
+}
+
+/* Section tiles grid inside back face */
+.face-back > div > div[class*="grid"] {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 var(--sp-08);
+  border-top: var(--border);
+  padding-top: var(--sp-07);
+}
+
+/* ============================================================
+   12 · SECTION TILES (back face of persona modals)
+   ============================================================ */
+.section-tile { margin-bottom: var(--sp-07); }
+
+.section-tile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--sp-03);
+}
+
+.section-tile-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius);
+  background: var(--accent-wash);
+  border: 1px solid rgba(90,45,130,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+/* Override all colored icon variants */
+.section-tile-icon[class*="bg-"] { background: var(--accent-wash) !important; }
+
+.section-tile-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.section-tile ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-02);
+}
+
+.section-tile li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-03);
+  font-size: var(--type-body-compact);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Dot bullets — single accent colour regardless of HTML class */
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 7px;
+  background: var(--accent) !important;
+}
+
+/* ============================================================
+   13 · PROSE (artefact modal content)
+   ============================================================ */
+.prose h2 {
+  font-family: var(--font-sans);
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--sp-06) 0 var(--sp-02);
+  letter-spacing: 0;
+}
+
+.prose h2:first-child { margin-top: 0; }
+
+.prose h3 {
+  font-size: var(--type-body-compact);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--sp-04) 0 var(--sp-02);
+}
+
+.prose p {
+  font-size: var(--type-body-compact);
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: var(--sp-03);
+}
+
+.prose ul, .prose ol { padding-left: var(--sp-05); margin-bottom: var(--sp-03); }
+.prose ul { list-style: disc; }
+.prose ol { list-style: decimal; }
+
+.prose li {
+  font-size: var(--type-body-compact);
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 3px;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--border-subtle);
+  padding-left: var(--sp-04);
+  margin: var(--sp-03) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: var(--type-body-compact);
+  line-height: 1.65;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--sp-04);
+  font-size: var(--type-label);
+}
+
+.prose th {
+  background: var(--layer);
+  padding: 6px var(--sp-02);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border: var(--border);
+}
+
+.prose td {
+  padding: 6px var(--sp-02);
+  color: var(--text-secondary);
+  border: var(--border);
+  vertical-align: top;
+}
+
+.prose strong { color: var(--text-primary); font-weight: 600; }
+
+.prose hr {
+  border: none;
+  border-top: var(--border);
+  margin: var(--sp-05) 0;
+}
+
+/* ============================================================
+   14 · ANIMATIONS
+   ============================================================ */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ============================================================
+   15 · SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--layer); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+  </style>
+</head>
+<body>
+
+<!-- ─── Header ───────────────────────────────────────── -->
+<header class="bg-white border-b border-slate-200 px-8 py-5 sticky top-0 z-10">
+  <div class="max-w-[1400px] mx-auto flex items-center gap-3">
+    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+      <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    </div>
+    <span class="serif text-lg font-semibold text-slate-900">S&amp;PE Product AI Pillar</span>
+  </div>
+</header>
+
+
+<!-- ─── Main ──────────────────────────────────────────── -->
+<main class="max-w-[1400px] mx-auto px-8 pb-24 pt-10">
+
+  <!-- Status badge -->
+  <div class="flex items-center justify-end gap-3 mb-6">
+    <span class="section-label">NHS · Discovery Complete</span>
+    <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+  </div>
+
+  <!-- ── Section 1: Problem Statement ─────────────────── -->
+  <div class="mb-10 p-8 bg-slate-50 rounded-2xl border border-slate-200">
+    <h2 class="serif text-3xl font-semibold text-slate-900 leading-tight mb-8">
+      Use Case &amp; the Problem Statement<br/>
+      <em class="font-normal text-slate-600">Feedback analysis for NHS</em>
+    </h2>
+    <p class="text-slate-600 leading-relaxed text-sm max-w-4xl mb-8">
+      NHS trusts face growing financial and reputational exposure from patient feedback they cannot analyse at scale. The 10 Year Health Plan (July 2025) directly ties trust income to patient ratings through clinical team payments, patient power payments, and publicly published league tables updated quarterly from summer 2025. Yet most trusts still rely on manual coding, sampled data, and disconnected reporting systems that prevent timely action. There is no NHS-native platform that combines AI-powered theme classification, closed-loop feedback management, and integration with clinical systems — leaving organisations unable to detect emerging risks early or demonstrate improvement to regulators and boards.
+    </p>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="bg-white rounded-xl border border-slate-200 px-4 py-4">
+        <p class="section-label mb-1">User Personas</p>
+        <p class="serif text-2xl font-semibold text-slate-900 mb-0.5">3</p>
+        <p class="text-xs text-slate-500">Chief Nurse · Quality Mgr · Ward Mgr</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 px-4 py-4">
+        <p class="section-label mb-1">Research Activities</p>
+        <p class="serif text-2xl font-semibold text-slate-900 mb-0.5">9</p>
+        <p class="text-xs text-slate-500">Items planned</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 px-4 py-4">
+        <p class="section-label mb-1">Tasks</p>
+        <p class="serif text-2xl font-semibold text-slate-900 mb-0.5">25</p>
+        <p class="text-xs text-slate-500">In backlog</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 px-4 py-4">
+        <p class="section-label mb-1">Build Decision</p>
+        <p class="serif text-2xl font-semibold text-emerald-600 mb-0.5">GO</p>
+        <p class="text-xs text-slate-500">Discovery complete · June 2026</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: User Personas ─────────────────────── -->
+  <div class="mb-8">
+    <p class="section-label mb-1.5">Click any persona to explore in depth</p>
+    <h2 class="serif text-2xl font-semibold text-slate-900">User Personas</h2>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-14">
+
+    <!-- Chief Nurse card -->
+    <div class="persona-grid-card" onclick="openModal('m-cn')">
+      <div class="relative h-64 bg-slate-100 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Chief Nurse" class="hero-img w-full h-full object-cover"/>
+        <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+      </div>
+      <div class="p-6">
+        <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-3">User Persona</span>
+        <h3 class="serif text-2xl font-semibold text-slate-900 mb-2">Chief Nurse / Director of Patient Experience</h3>
+        <p class="text-sm text-slate-400 leading-relaxed mb-5 line-clamp-2">Walk into every board meeting knowing which services are at risk — before the board asks</p>
+        <div class="flex items-center gap-1.5 text-sm text-blue-400 font-medium">
+          View full profile
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quality Manager card -->
+    <div class="persona-grid-card" onclick="openModal('m-qm')">
+      <div class="relative h-64 bg-slate-100 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Quality Manager" class="hero-img w-full h-full object-cover"/>
+        <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+      </div>
+      <div class="p-6">
+        <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-3">User Persona</span>
+        <h3 class="serif text-2xl font-semibold text-slate-900 mb-2">Quality Manager / Patient Experience Lead</h3>
+        <p class="text-sm text-slate-400 leading-relaxed mb-5 line-clamp-2">Process 100% of patient feedback comments — not a 10–20% sample</p>
+        <div class="flex items-center gap-1.5 text-sm text-blue-400 font-medium">
+          View full profile
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ward Manager card -->
+    <div class="persona-grid-card" onclick="openModal('m-wm')">
+      <div class="relative h-64 bg-slate-100 overflow-hidden">
+        <img src="https://images.unsplash.com/photo-1516841273335-e39b37888115?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Ward Manager" class="hero-img w-full h-full object-cover"/>
+        <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+      </div>
+      <div class="p-6">
+        <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-3">User Persona</span>
+        <h3 class="serif text-2xl font-semibold text-slate-900 mb-2">Ward Manager / Service Line Lead</h3>
+        <p class="text-sm text-slate-400 leading-relaxed mb-5 line-clamp-2">Receive a short email every Monday morning with last week's patient feedback — no login required</p>
+        <div class="flex items-center gap-1.5 text-sm text-blue-400 font-medium">
+          View full profile
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Section 3: Research Artefacts ─────────────────── -->
+  <div class="mt-14 pt-10 border-t border-slate-200">
+    <div class="flex items-start justify-between mb-8">
+      <div>
+        <p class="section-label mb-1.5">Click any card to read the full artefact</p>
+        <h2 class="serif text-2xl font-semibold text-slate-900">Research Artefacts</h2>
+      </div>
+      <span class="mono text-[10px] text-slate-400 mt-2">12 items</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+      <div class="artefact-card" onclick="openModal('m-a1')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mb-2">Market Research</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Market &amp; Competitor Analysis</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">311 NHS trusts. £18–40M ARR addressable. 18–24 month competitive window before a US competitor makes a serious NHS push.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a2')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full inline-block mb-2">Strategy</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">VMOST — Strategic Intent</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Vision: A NHS where every patient's voice is heard in time to prevent harm. Mission: Turn unstructured patient feedback into real-time intelligence.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a3')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mb-2">Goals</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">OKRs — Year 1</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Four objectives across product, commercial, technical, and feedback loop pillars. All key results are measurable, time-bound, and validated through the discovery phase.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a4')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full inline-block mb-2">Planning</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Product Roadmap — Now / Next / Later</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Phased delivery around the 10YHP implementation timeline. DTAC compliance is a Q1 non-negotiable. Risk-alerting goes live with the MVP.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a5')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full inline-block mb-2">User Research</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Target Users — Primary &amp; Secondary</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Three primary daily users plus four secondary output consumers. Economic buyer vs end user distinction is critical for renewal.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a6')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1543269664-7eef42226a21?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full inline-block mb-2">Discovery</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Jobs-to-be-Done Canvases</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">MVP-scoped JTBD canvases for all three personas. Updated post-discovery with switch triggers, workarounds, desired outcomes, and MVP feature mapping.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a7')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full inline-block mb-2">Product</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">MVP PRD — Risk Alert Module</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Version 0.1 · Discovery validated · 4 post-discovery pivots applied. AI theme classification, sentiment scoring, top-3 alert dashboard, weekly ward digest, board pack export.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a8')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full inline-block mb-2">Research</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Discovery Research Plan — MVP Demo</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Five-stage discovery plan: user interviews, feedback analysis, tech discovery, ideation &amp; hypotheses, and design prototypes.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a9')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full inline-block mb-2">Findings</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Discovery Findings Report — All 4 Gates</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">VERDICT: BUILD — with 4 targeted pivots. All four decision gates pass. 14 interviews · 9 prototype sessions · 1 LOI signed at £45k.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a10')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block mb-2">Interviews</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">User Interview Scripts — Round 1</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Five-question interview scripts with verbatim persona responses for Chief Nurse, Quality Manager, and Ward Manager. Validates MVP scope and discovery assumptions.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a11')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full inline-block mb-2">Technical</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Technical Discovery Report</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">MVP-scoped technical findings: stack decisions, NHS infrastructure constraints, IG requirements, architectural patterns, and reusable components identified during discovery.</p>
+        </div>
+      </div>
+
+      <div class="artefact-card" onclick="openModal('m-a12')">
+        <div class="h-36 overflow-hidden"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop&auto=format" class="w-full h-full object-cover" alt=""/></div>
+        <div class="p-5">
+          <span class="mono text-[9px] font-semibold uppercase tracking-widest text-green-600 bg-green-50 px-2 py-0.5 rounded-full inline-block mb-2">Business</span>
+          <h3 class="serif text-sm font-semibold text-slate-900 mb-1.5">Business Strategy Analysis</h3>
+          <p class="text-xs text-slate-500 leading-relaxed line-clamp-2">Converts a previously unanalysable data asset into financial and reputational protection. The value is existential, not incremental — trusts face income exposure without it.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ─── Footer ────────────────────────────────────────── -->
+<footer class="border-t border-slate-200 bg-white px-8 py-6">
+  <div class="max-w-[1400px] mx-auto flex items-center justify-between">
+    <span class="mono text-[10px] text-slate-400 uppercase tracking-widest">S&amp;PE Product AI Pillar · Use Case – NHS Platform</span>
+    <span class="mono text-[10px] text-slate-400">Accenture S&amp;PE · 2026</span>
+  </div>
+</footer>
+
+<!-- ════════════════════════════════════════════════════════
+     PERSONA MODALS — flip card: front (photo+video) / back (4 tiles)
+════════════════════════════════════════════════════════ -->
+
+<!-- Chief Nurse modal -->
+<div id="m-cn" class="modal-overlay" onclick="overlayClose(event,'m-cn')">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl" style="height:90vh;overflow:hidden;position:relative">
+    <!-- Close -->
+    <button onclick="closeModal('m-cn')" style="position:absolute;top:1rem;right:1rem;z-index:20;width:2.25rem;height:2.25rem;border-radius:50%;background:rgba(226,232,240,.8);backdrop-filter:blur(4px);border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#475569">✕</button>
+    <!-- Flip container -->
+    <div id="flip-cn" class="flip-wrap" style="height:100%">
+      <!-- FRONT -->
+      <div class="face">
+        <div class="relative overflow-hidden" style="height:16rem;background:#f1f5f9;flex-shrink:0">
+          <img src="https://images.unsplash.com/photo-1584432810601-6c7f27d2362b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Chief Nurse" class="w-full h-full object-cover"/>
+          <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+        </div>
+        <div class="px-8 pt-6 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">User Persona</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-6">Chief Nurse / Director of Patient Experience</h2>
+          <!-- Video panel -->
+          <div class="mb-6 border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="mono text-[10px] font-semibold uppercase tracking-[.15em] text-slate-500">Persona Video</span>
+            </div>
+            <div class="flex flex-col items-center justify-center gap-2 py-8 text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="text-xs">Click to add a video URL</span>
+            </div>
+          </div>
+          <button onclick="flip('flip-cn',true)" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            View persona details
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- BACK -->
+      <div class="face face-back">
+        <div class="px-8 pt-14 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">Persona Profile</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-8">Chief Nurse / Director of Patient Experience</h2>
+          <div class="grid grid-cols-2 gap-x-10 border-t border-slate-200 pt-8">
+            <!-- Goals -->
+            <div class="section-tile">
+              <div class="section-tile-header">
+                <div class="section-tile-icon bg-blue-50 text-blue-500">🎯</div>
+                <span class="section-tile-label">Goals</span>
+              </div>
+              <ul>
+                <li><span class="dot bg-blue-400"></span>Walk into every board meeting knowing which services are at risk — before the board asks</li>
+                <li><span class="dot bg-blue-400"></span>Demonstrate a functioning feedback intelligence process to CQC Well-Led inspectors</li>
+                <li><span class="dot bg-blue-400"></span>Protect trust income tied to patient ratings under the 10 Year Health Plan</li>
+                <li><span class="dot bg-blue-400"></span>Receive a red alert within 24 hours when any service crosses a risk threshold</li>
+                <li><span class="dot bg-blue-400"></span>Produce a board-ready patient experience pack without manual preparation</li>
+              </ul>
+            </div>
+            <!-- Pain Points -->
+            <div class="section-tile">
+              <div class="section-tile-header">
+                <div class="section-tile-icon bg-amber-50 text-amber-500">⚠️</div>
+                <span class="section-tile-label">Pain Points</span>
+              </div>
+              <ul>
+                <li><span class="dot bg-amber-400"></span>Finding out about ward problems from the press or a complaint — never from data</li>
+                <li><span class="dot bg-amber-400"></span>Board packs take the quality team 2–3 days to compile manually every quarter</li>
+                <li><span class="dot bg-amber-400"></span>No single view across wards, specialties, and care settings in one place</li>
+                <li><span class="dot bg-amber-400"></span>CQC asks for feedback evidence during inspections — gathering it takes weeks</li>
+                <li><span class="dot bg-amber-400"></span>The 10YHP payment linkage means a poor quarter now has direct income consequences</li>
+              </ul>
+            </div>
+            <!-- Motivators -->
+            <div class="section-tile">
+              <div class="section-tile-header">
+                <div class="section-tile-icon bg-emerald-50 text-emerald-500">⚡</div>
+                <span class="section-tile-label">Motivators</span>
+              </div>
+              <ul>
+                <li><span class="dot bg-emerald-400"></span>A trust-wide risk dashboard that shows the top deteriorating wards at a glance</li>
+                <li><span class="dot bg-emerald-400"></span>Automated board pack export — PDF ready for the meeting, no manual input</li>
+                <li><span class="dot bg-emerald-400"></span>Real-time alert when sentiment on any service drops below threshold</li>
+                <li><span class="dot bg-emerald-400"></span>One-click CQC evidence pack showing feedback trends, themes, and actions taken</li>
+                <li><span class="dot bg-emerald-400"></span>Confidence that the quality team is acting on data, not intuition</li>
+              </ul>
+            </div>
+            <!-- Opportunities -->
+            <div class="section-tile">
+              <div class="section-tile-header">
+                <div class="section-tile-icon bg-purple-50 text-purple-500">💡</div>
+                <span class="section-tile-label">Opportunities</span>
+              </div>
+              <ul>
+                <li><span class="dot bg-purple-400"></span>MVP: Receive a 24-hour red alert when a ward crosses the risk threshold — with the top driving theme and a direct dashboard link</li>
+                <li><span class="dot bg-purple-400"></span>MVP: Auto-generated board pack (PDF) covering trust-wide sentiment, top risks, and trend direction</li>
+                <li><span class="dot bg-purple-400"></span>MVP: CQC evidence export showing all feedback processed, themes identified, and actions logged</li>
+                <li><span class="dot bg-purple-400"></span>Post-MVP: Portfolio view linking patient experience scores to clinical outcomes and 10YHP payment exposure</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="flip('flip-cn',false)" class="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Back to overview
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quality Manager modal -->
+<div id="m-qm" class="modal-overlay" onclick="overlayClose(event,'m-qm')">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl" style="height:90vh;overflow:hidden;position:relative">
+    <button onclick="closeModal('m-qm')" style="position:absolute;top:1rem;right:1rem;z-index:20;width:2.25rem;height:2.25rem;border-radius:50%;background:rgba(226,232,240,.8);backdrop-filter:blur(4px);border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#475569">✕</button>
+    <div id="flip-qm" class="flip-wrap" style="height:100%">
+      <div class="face">
+        <div class="relative overflow-hidden" style="height:16rem;background:#f1f5f9">
+          <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Quality Manager" class="w-full h-full object-cover"/>
+          <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+        </div>
+        <div class="px-8 pt-6 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">User Persona</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-6">Quality Manager / Patient Experience Lead</h2>
+          <div class="mb-6 border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="mono text-[10px] font-semibold uppercase tracking-[.15em] text-slate-500">Persona Video</span>
+            </div>
+            <div class="flex flex-col items-center justify-center gap-2 py-8 text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="text-xs">Click to add a video URL</span>
+            </div>
+          </div>
+          <button onclick="flip('flip-qm',true)" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            View persona details
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="face face-back">
+        <div class="px-8 pt-14 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">Persona Profile</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-8">Quality Manager / Patient Experience Lead</h2>
+          <div class="grid grid-cols-2 gap-x-10 border-t border-slate-200 pt-8">
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-blue-50 text-blue-500">🎯</div><span class="section-tile-label">Goals</span></div>
+              <ul>
+                <li><span class="dot bg-blue-400"></span>Process 100% of patient feedback comments — not a 10–20% sample</li>
+                <li><span class="dot bg-blue-400"></span>See the top 3 deteriorating wards at a glance without wading through every metric</li>
+                <li><span class="dot bg-blue-400"></span>Drill from a risk alert down to the specific themes and verbatim comments driving it</li>
+                <li><span class="dot bg-blue-400"></span>Reduce quarterly manual FFT coding from 2–3 days to under 2 hours</li>
+                <li><span class="dot bg-blue-400"></span>Close the loop: log an action against a theme and track whether scores improve</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-amber-50 text-amber-500">⚠️</div><span class="section-tile-label">Pain Points</span></div>
+              <ul>
+                <li><span class="dot bg-amber-400"></span>Spending 2–3 days every quarter manually coding FFT free-text in Excel</li>
+                <li><span class="dot bg-amber-400"></span>Sampling 10–20% of comments means real issues go undetected until too late</li>
+                <li><span class="dot bg-amber-400"></span>Alert dashboards that show every ward above threshold — impossible to prioritise</li>
+                <li><span class="dot bg-amber-400"></span>No way to prove to the board that feedback led to measurable improvement</li>
+                <li><span class="dot bg-amber-400"></span>CQC evidence preparation is a multi-week panic before every inspection</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-emerald-50 text-emerald-500">⚡</div><span class="section-tile-label">Motivators</span></div>
+              <ul>
+                <li><span class="dot bg-emerald-400"></span>Alert dashboard defaulting to the top 3 deteriorating wards only — no alert fatigue</li>
+                <li><span class="dot bg-emerald-400"></span>AI theme classification at 91%+ accuracy on real NHS FFT data</li>
+                <li><span class="dot bg-emerald-400"></span>Drilldown in 3 clicks: alert → theme → verbatim comments</li>
+                <li><span class="dot bg-emerald-400"></span>Closed-loop action log: log a response, track whether the score recovers</li>
+                <li><span class="dot bg-emerald-400"></span>CQC evidence pack generated in hours, not weeks</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-purple-50 text-purple-500">💡</div><span class="section-tile-label">Opportunities</span></div>
+              <ul>
+                <li><span class="dot bg-purple-400"></span>MVP: Top-3 alert dashboard — only the highest-risk wards shown by default, with a 'show all' toggle</li>
+                <li><span class="dot bg-purple-400"></span>MVP: AI theme classification on 100% of FFT and NHS App comments — no manual coding</li>
+                <li><span class="dot bg-purple-400"></span>MVP: Drilldown from alert to top 5 themes to representative verbatims (3–10 per theme)</li>
+                <li><span class="dot bg-purple-400"></span>MVP: Basic board pack export (PDF) covering sentiment trends and alert history</li>
+                <li><span class="dot bg-purple-400"></span>Post-MVP: Closed-loop 'You Said, We Did' workflow; integration with Datix, PALS, NHS App</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="flip('flip-qm',false)" class="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Back to overview
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ward Manager modal -->
+<div id="m-wm" class="modal-overlay" onclick="overlayClose(event,'m-wm')">
+  <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl" style="height:90vh;overflow:hidden;position:relative">
+    <button onclick="closeModal('m-wm')" style="position:absolute;top:1rem;right:1rem;z-index:20;width:2.25rem;height:2.25rem;border-radius:50%;background:rgba(226,232,240,.8);backdrop-filter:blur(4px);border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#475569">✕</button>
+    <div id="flip-wm" class="flip-wrap" style="height:100%">
+      <div class="face">
+        <div class="relative overflow-hidden" style="height:16rem;background:#f1f5f9">
+          <img src="https://images.unsplash.com/photo-1516841273335-e39b37888115?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080" alt="Ward Manager" class="w-full h-full object-cover"/>
+          <div class="absolute inset-0" style="background:linear-gradient(to top,rgba(241,239,244,0.85),rgba(241,239,244,0.1),transparent)"></div>
+        </div>
+        <div class="px-8 pt-6 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">User Persona</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-6">Ward Manager / Service Line Lead</h2>
+          <div class="mb-6 border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="mono text-[10px] font-semibold uppercase tracking-[.15em] text-slate-500">Persona Video</span>
+            </div>
+            <div class="flex flex-col items-center justify-center gap-2 py-8 text-slate-400">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="text-xs">Click to add a video URL</span>
+            </div>
+          </div>
+          <button onclick="flip('flip-wm',true)" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            View persona details
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="face face-back">
+        <div class="px-8 pt-14 pb-10">
+          <span class="mono inline-block text-[10px] font-semibold uppercase tracking-[.15em] text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 mb-4">Persona Profile</span>
+          <h2 class="serif text-3xl font-semibold text-slate-900 mb-8">Ward Manager / Service Line Lead</h2>
+          <div class="grid grid-cols-2 gap-x-10 border-t border-slate-200 pt-8">
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-blue-50 text-blue-500">🎯</div><span class="section-tile-label">Goals</span></div>
+              <ul>
+                <li><span class="dot bg-blue-400"></span>Receive a short email every Monday morning with last week's patient feedback — no login required</li>
+                <li><span class="dot bg-blue-400"></span>See the top 2 concerns and top 2 positives from my ward, not a headline score</li>
+                <li><span class="dot bg-blue-400"></span>Share at least one positive patient comment with the team at the Monday huddle</li>
+                <li><span class="dot bg-blue-400"></span>Know what patients are saying before a concern escalates to a complaint</li>
+                <li><span class="dot bg-blue-400"></span>Spend less than 3 minutes engaging with feedback on a 12-hour ward shift</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-amber-50 text-amber-500">⚠️</div><span class="section-tile-label">Pain Points</span></div>
+              <ul>
+                <li><span class="dot bg-amber-400"></span>Feedback arrives 4–6 weeks after a patient's stay — too late to address the issue or recognise the staff involved</li>
+                <li><span class="dot bg-amber-400"></span>Aggregated satisfaction scores tell me nothing about what specifically went wrong or right</li>
+                <li><span class="dot bg-amber-400"></span>Logging into another system during a shift is not realistic — it simply will not happen</li>
+                <li><span class="dot bg-amber-400"></span>Positive patient comments never reach the ward team — only complaints filter through</li>
+                <li><span class="dot bg-amber-400"></span>Feeling that feedback is collected centrally but never acted on at ward level</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-emerald-50 text-emerald-500">⚡</div><span class="section-tile-label">Motivators</span></div>
+              <ul>
+                <li><span class="dot bg-emerald-400"></span>One email, Monday 08:00, no login — readable in under 3 minutes</li>
+                <li><span class="dot bg-emerald-400"></span>Always contains at least one positive verbatim comment from a patient — this is non-negotiable for staff morale</li>
+                <li><span class="dot bg-emerald-400"></span>Top 2 concern themes are specific and actionable, not vague satisfaction scores</li>
+                <li><span class="dot bg-emerald-400"></span>A one-tap 'share with team' link so the digest can be forwarded to the ward WhatsApp</li>
+                <li><span class="dot bg-emerald-400"></span>Knowing that feedback from my ward is being read and acted on, not just collected</li>
+              </ul>
+            </div>
+            <div class="section-tile">
+              <div class="section-tile-header"><div class="section-tile-icon bg-purple-50 text-purple-500">💡</div><span class="section-tile-label">Opportunities</span></div>
+              <ul>
+                <li><span class="dot bg-purple-400"></span>MVP: Weekly ward digest email — Monday 08:00, top 2 concerns + top 2 positives + 1 verbatim quote, magic link (no login, 7-day expiry)</li>
+                <li><span class="dot bg-purple-400"></span>MVP: 'Share with team' one-tap link included in every digest</li>
+                <li><span class="dot bg-purple-400"></span>Post-MVP: Pre-discharge feedback capture so ward managers see same-week comments</li>
+                <li><span class="dot bg-purple-400"></span>Post-MVP: Ward comparison view — benchmark against similar wards to identify and share good practice</li>
+                <li><span class="dot bg-purple-400"></span>Post-MVP: Ward-facing web dashboard (deprioritised from MVP — digest is the primary touchpoint)</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="flip('flip-wm',false)" class="mt-2 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 text-sm text-slate-500 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Back to overview
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ARTEFACT MODALS
+════════════════════════════════════════════════════════ -->
+<div id="m-a1" class="modal-overlay" onclick="overlayClose(event,'m-a1')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a1')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-blue-600 text-white px-2.5 py-0.5 rounded-full">Market Research</span><h3 class="serif text-lg font-semibold text-white mt-1">Market &amp; Competitor Analysis</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Market Moment</h2><p>The 10 Year Health Plan (published July 2025) creates a step-change in the materiality of patient feedback. For the first time, trust income is directly tied to patient ratings through three mechanisms:</p><ul><li><strong>Clinical team payment</strong> tied to feedback scores</li><li><strong>Patient power payments</strong> — patients influence whether providers get paid in full</li><li><strong>Public league tables</strong> including patient ratings, updated quarterly from summer 2025</li></ul><p>The Medium Term Planning Framework (October 2025) already mandates all providers capture near-real-time feedback on at least 5 wards before patient discharge — this is a <strong>current compliance requirement</strong>, not a future risk.</p><h2>Addressable Market</h2><table><tr><th>Segment</th><th>Annual Opportunity</th><th>Window</th></tr><tr><td>~311 NHS trusts (acute, mental health, community, ambulance)</td><td>£18–40M ARR core NHS. Secondary: 42 ICBs</td><td>18–24 months before a US competitor makes a serious NHS push</td></tr></table><h2>Competitive Landscape</h2><table><tr><th>Competitor</th><th>AI Themes</th><th>Risk Alert</th><th>NHS Integrations</th><th>Board Output</th><th>Our Advantage</th></tr><tr><td>Qualtrics</td><td>Limited</td><td>✗</td><td>✗</td><td>Template</td><td>Generic; no NHS context, no FFT/PALS ingest, no early-warning logic</td></tr><tr><td>Civica / Meridio</td><td>✗</td><td>✗</td><td>✓ Strong</td><td>✗</td><td>Data capture only; no analytical layer. Potential integration partner.</td></tr><tr><td>Cemplicity</td><td>Basic NLP</td><td>✗</td><td>Partial</td><td>Charts only</td><td>Reporting-focused, not intelligence-focused. No anomaly alerting.</td></tr><tr><td>NRC Health</td><td>✓</td><td>Partial</td><td>✗</td><td>✓</td><td>US product; data residency mismatch. No NHS App integration.</td></tr><tr><td>In-house Power BI</td><td>✗</td><td>✗</td><td>Manual</td><td>Static</td><td>Dominant 'competitor' — manual, slow, sampled. 10YHP makes this untenable.</td></tr><tr><td><strong>Patient Feedback Intelligence</strong></td><td>✓ Full</td><td>✓ Core</td><td>✓ All sources</td><td>✓ AI-generated</td><td>Only product combining all four: ingest, understand, alert, act.</td></tr></table><h2>Tailwinds</h2><ul><li>10YHP makes feedback financially material — direct income linkage</li><li>NHS App generating 10× more ratings data than legacy FFT</li><li>CQC Well-Led inspections increasingly scrutinise feedback use</li><li>Every major care scandal cited unread patient feedback as a warning sign</li><li>ICB consolidation creates demand for system-level views</li><li>NHS England actively seeking market input for a 'holistic insight system'</li></ul><h2>Headwinds</h2><ul><li>NHS procurement cycles are 12–18 months</li><li>Data governance / IG requirements add complexity to onboarding</li><li>Existing Civica/Cerner contracts create inertia at the data layer</li><li>Budget pressure — trusts under financial recovery may defer spend</li><li>10YHP implementation timeline subject to political risk</li></ul></div></div></div>
+
+<div id="m-a2" class="modal-overlay" onclick="overlayClose(event,'m-a2')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a2')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-violet-600 text-white px-2.5 py-0.5 rounded-full">Strategy</span><h3 class="serif text-lg font-semibold text-white mt-1">VMOST — Strategic Intent</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>V — Vision</h2><p>A NHS where every patient's voice is heard in time to prevent harm — not in an inquiry, after the fact.</p><h2>M — Mission</h2><p>To turn unstructured NHS patient feedback into real-time intelligence that trust boards can act on — making the patient's voice measurable, comparable, and impossible to ignore.</p><h2>O — Objectives</h2><ul><li>Reduce median time-from-feedback-to-action at NHS trusts from ~90 days to under 7 days</li><li>Achieve 80% coverage of all structured and free-text feedback sources per trust within 12 months of go-live</li><li>Enable trusts to demonstrate measurable feedback-driven improvements for CQC inspections</li></ul><h2>S — Strategy</h2><p>Land with acute trusts where financial pressure from the 10YHP is most acute. Win on risk-alerting (a capability no incumbent offers) as the initial wedge.</p><h2>T — Tactics</h2><ul><li><strong>Auto-generated CQC evidence pack</strong> as immediate time-to-value for quality teams</li><li><strong>'You Said, We Did' output</strong> as trust-facing proof of ROI for renewal conversations</li></ul></div></div></div>
+
+<div id="m-a3" class="modal-overlay" onclick="overlayClose(event,'m-a3')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a3')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-emerald-600 text-white px-2.5 py-0.5 rounded-full">Goals</span><h3 class="serif text-lg font-semibold text-white mt-1">OKRs — Year 1</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>O1 — Prove the product works at scale in a real NHS trust</h2><ul><li><strong>KR 1:</strong> 2 NHS trusts live on the platform with >80% of feedback sources ingested by end of Q2</li><li><strong>KR 2:</strong> Median time from feedback ingestion to surfaced theme &lt;24 hours (vs status quo of 30–90 days)</li><li><strong>KR 3:</strong> At least 1 confirmed early-warning alert validated by the trust as clinically meaningful by end of Q3</li><li><strong>KR 4:</strong> NPS from quality leads and chief nurses at pilot sites ≥ 45</li></ul><h2>O2 — Build the commercial foundation for scalable growth</h2><ul><li><strong>KR 1:</strong> ARR of £500k by end of Year 1, on a path to £2M by end of Year 2</li><li><strong>KR 2:</strong> At least 1 published case study co-authored with a reference trust, with quantified outcomes</li><li><strong>KR 3:</strong> Listed on G-Cloud and NHS procurement frameworks by end of Q3</li><li><strong>KR 4:</strong> 5 trusts in active procurement (at commercial terms stage) by end of Year 1</li></ul><h2>O3 — Establish technical and data infrastructure for scale</h2><ul><li><strong>KR 1:</strong> NHS App, FFT, PALS, and complaints integrations all production-ready by end of Q2</li><li><strong>KR 2:</strong> Platform achieves NHS DSP Toolkit compliance and DTAC assessment by end of Q1</li><li><strong>KR 3:</strong> AI theme classification accuracy ≥ 91% (validated against manual expert coding on 500-comment sample)</li><li><strong>KR 4:</strong> Platform uptime ≥ 99.5% on a rolling 90-day basis from Q2 onwards</li></ul><h2>O4 — Create clear feedback loops from insight to improvement</h2><ul><li><strong>KR 1:</strong> 'You Said, We Did' report used by at least 1 trust to communicate improvement back to patients</li><li><strong>KR 2:</strong> Board-ready pack exported and used in a trust board meeting by at least 2 pilot trusts</li><li><strong>KR 3:</strong> At least 1 trust cites platform outputs as CQC evidence in a Well-Led assessment</li></ul></div></div></div>
+
+<div id="m-a4" class="modal-overlay" onclick="overlayClose(event,'m-a4')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a4')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-orange-600 text-white px-2.5 py-0.5 rounded-full">Planning</span><h3 class="serif text-lg font-semibold text-white mt-1">Product Roadmap — Now / Next / Later</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><p><strong>Key sequencing decision:</strong> DSP Toolkit and DTAC compliance are prerequisite to everything — no NHS trust will sign a data processing agreement without them. These are Q1 deliverables, not Q2.</p><h2>Ingest Layer</h2><table><tr><th>NOW — Q1–Q2</th><th>NEXT — Q3–Q4</th><th>LATER — Year 2+</th></tr><tr><td>NHS App ratings · FFT free text (API + CSV) · CSV complaints upload</td><td>PALS API · Survey platform connectors · Datix integration</td><td>Real-time streaming ingest · ICB aggregation layer</td></tr></table><h2>Understand Layer</h2><table><tr><th>NOW</th><th>NEXT</th><th>LATER</th></tr><tr><td>AI theme classification · Sentiment scoring · Ward/pathway mapping</td><td>Severity classification · Multi-language support · Trend detection (QoQ)</td><td>Cross-trust benchmarking · Predictive risk modelling</td></tr></table><h2>Alert Layer</h2><table><tr><th>NOW</th><th>NEXT</th><th>LATER</th></tr><tr><td>Sentiment deterioration alerts · Weekly digest emails</td><td>Threshold-based real-time alerts · Slack/Teams integration · Alert audit trail</td><td>Proactive risk scores · Serious incident correlation</td></tr></table><h2>Act Layer</h2><table><tr><th>NOW</th><th>NEXT</th><th>LATER</th></tr><tr><td>Board-ready pack (PDF) · CQC evidence export</td><td>'You Said, We Did' generator · Improvement action tracker · API for existing BI tools</td><td>Closed-loop improvement tracking · Patient-facing outcomes reporting</td></tr></table><h2>Platform</h2><table><tr><th>NOW</th><th>NEXT</th><th>LATER</th></tr><tr><td>DSP Toolkit compliance · DTAC assessment · Role-based access</td><td>G-Cloud listing · SSO / NHS Login · Audit logging</td><td>Multi-trust tenancy · On-premise deployment option</td></tr></table></div></div></div>
+
+<div id="m-a5" class="modal-overlay" onclick="overlayClose(event,'m-a5')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a5')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-blue-600 text-white px-2.5 py-0.5 rounded-full">User Research</span><h3 class="serif text-lg font-semibold text-white mt-1">Target Users — Primary &amp; Secondary</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Primary Users — Daily / Weekly Platform Interaction</h2><table><tr><th>Chief Nurse</th><th>Quality Manager</th><th>Ward Manager</th></tr><tr><td>Strategic owner · Board-facing · Financially exposed under 10YHP</td><td>Operational owner · Daily platform user · Process builder</td><td>Frontline responder · Alert recipient · Advocate or blocker</td></tr><tr><td><ul><li>Know which wards are deteriorating before board meetings</li><li>Demonstrate feedback-driven improvement to CQC</li><li>Produce board packs in minutes, not days</li><li>Early warning of income exposure from 10YHP</li></ul></td><td><ul><li>Analyse 100% of comments — not a sample</li><li>Theme drilldown to verbatim comments</li><li>CQC evidence pack in hours, not weeks</li><li>Closed loop: feedback → action → outcome tracking</li></ul></td><td><ul><li>Weekly email digest — no login required</li><li>Specific, actionable themes not just a score</li><li>Positive comment highlights for staff morale</li><li>Simple enough for a 12-hour ward shift</li></ul></td></tr></table><h2>Secondary Users — Receive Outputs, Do Not Configure</h2><table><tr><th>User</th><th>What They Receive</th></tr><tr><td><strong>Trust Board / NED</strong></td><td>Auto-generated board pack. One page with trend, risk flags, and narrative — not raw data.</td></tr><tr><td><strong>CQC Inspectors</strong></td><td>Evidence pack as part of Well-Led inspection. Validates the trust has a functioning feedback intelligence process.</td></tr><tr><td><strong>ICB Analytics Teams</strong></td><td>Year 2+ user. System-level rollup across trusts to spot network-wide themes and outlier providers.</td></tr><tr><td><strong>Patients (indirect)</strong></td><td>'You Said, We Did' output — proof that their feedback was heard and acted on. Drives future participation.</td></tr></table><h2>Economic Buyer vs End User</h2><p>Chief Nurse or CFO signs the contract (cares about financial risk and CQC outcomes). Quality Manager and Ward Manager are the daily users (care about workflow and time-saving). If the end user finds it burdensome, the economic buyer hears it at renewal.</p></div></div></div>
+
+<div id="m-a6" class="modal-overlay" onclick="overlayClose(event,'m-a6')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1543269664-7eef42226a21?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a6')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-violet-600 text-white px-2.5 py-0.5 rounded-full">Discovery</span><h3 class="serif text-lg font-semibold text-white mt-1">Jobs-to-be-Done Canvases</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Chief Nurse / Director of Patient Experience</h2><blockquote>"I need to know which services are in trouble before I walk into the board meeting — not because the media told me, and not because a complaint landed on my desk." — Chief Nurse, large acute trust</blockquote><h3>Core Job Statement</h3><p>When I am accountable for patient experience and trust income across a large NHS organisation, I want to be alerted to deteriorating services within 24 hours — with the driving theme identified — so I can act before a ward-level problem becomes a board-level crisis or a CQC finding.</p><table><tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr><tr><td>Get a risk alert when a service deteriorates, with enough context to act on it immediately</td><td>Feel in control and informed — not reactive and surprised</td><td>Be seen by the board and CQC as running a trust that takes patient feedback seriously</td></tr></table><h2>Quality Manager / Patient Experience Lead</h2><blockquote>"I spend two days every quarter manually coding FFT comments in Excel. I know there must be a better way — but nobody has built one that actually works with real NHS free-text data." — Quality Manager, acute trust</blockquote><h3>Core Job Statement</h3><p>When I am responsible for turning patient feedback into actionable intelligence, I want to see the top 3 deteriorating wards at a glance and drill to the specific themes and verbatims driving each — so I can prioritise my response and stop spending days on manual data processing.</p><table><tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr><tr><td>Process 100% of feedback automatically; surface the highest-risk wards without alert fatigue</td><td>Feel like a strategic analyst, not a data entry clerk</td><td>Be trusted by the Chief Nurse and board to provide reliable, timely intelligence — not sampled guesswork</td></tr></table><h2>Ward Manager / Service Line Lead</h2><blockquote>"Send me an email. One. On Monday morning. Short. Tell me what patients said about my ward last week — the good and the bad. I'll read that. I will not log into another system." — Ward Manager, A&amp;E</blockquote><h3>Core Job Statement</h3><p>When I am running a ward and accountable for patient experience on my patch, I want to know what patients said about my ward last week — including the positive comments — delivered to my inbox before the Monday shift, so I can address concerns early and give my team the recognition they deserve.</p><table><tr><th>Functional Job</th><th>Emotional Job</th><th>Social Job</th></tr><tr><td>Receive a ward-specific, readable weekly summary with no login and no new system to learn</td><td>Feel connected to patient feedback without it adding to an already overloaded shift</td><td>Share positive patient comments with the team — build a culture where staff feel their work is seen and valued</td></tr></table></div></div></div>
+
+<div id="m-a7" class="modal-overlay" onclick="overlayClose(event,'m-a7')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a7')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-teal-600 text-white px-2.5 py-0.5 rounded-full">Product</span><h3 class="serif text-lg font-semibold text-white mt-1">MVP PRD — Risk Alert Module</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Problem Statement</h2><p>NHS trusts receive thousands of patient feedback comments per month across FFT, NHS App, PALS, and complaints. No trust has the capacity to read all of it. Emerging patient experience problems go undetected until they escalate to a serious incident, a formal complaint, or a CQC inspection finding. Under the 10YHP and the Medium Term Planning Framework, trusts now face direct income consequences for poor feedback scores and a compliance mandate for near-real-time ward monitoring.</p><h2>MVP Scope</h2><table><tr><th>✓ In Scope (MVP)</th><th>✗ Out of Scope (MVP)</th></tr><tr><td><ul><li>NHS App ratings + FFT free-text (CSV + API ingest)</li><li>AI theme classification on every comment (not sampled)</li><li>Sentiment scoring per comment, aggregated per ward</li><li>Trend detection: week-on-week and rolling 4-week change</li><li>Alert engine: top-3 deteriorating wards (post-discovery pivot)</li><li>Weekly digest email to ward managers (no login required)</li><li>Alert dashboard for Quality Manager — web app</li><li>Drilldown: alert → theme → verbatim comments</li><li>Basic board-pack export (PDF)</li><li>Role-based access: QM + Chief Nurse views</li></ul></td><td><ul><li>PALS, Datix, complaints integrations (Next phase)</li><li>'You Said, We Did' generator (Next)</li><li>Improvement action tracker (Next)</li><li>ICB / cross-trust aggregation (Later)</li><li>Ward-facing web app (Later — digest is the product for WMs)</li></ul></td></tr></table><h2>Must-Have User Stories</h2><p><strong>US-01:</strong> As a Quality Manager, I want to see the <strong>top 3 wards</strong> with the biggest sentiment deterioration in the last 4 weeks — not all wards above threshold — so I can prioritise without alert fatigue.</p><p><strong>US-02:</strong> As a Quality Manager, I want to drill from an alert into the specific themes driving the change. Theme view shows top 5 themes; each theme shows representative verbatim comments (min 3, max 10).</p><p><strong>US-03:</strong> As a Ward Manager, I want a weekly email digest with last week's patient feedback about my ward — including positive comments — delivered without needing to log in. Sent every Monday 08:00. Min 1 positive verbatim. Never silently skipped.</p><p><strong>US-04:</strong> As a Chief Nurse, I want an immediate alert when any service crosses the red threshold within 24 hours, containing: service name, threshold crossed, top driving theme, direct link to dashboard.</p><h2>Non-Functional Requirements</h2><table><tr><th>Requirement</th><th>Specification</th></tr><tr><td>Data residency</td><td>All patient data processed and stored within UK (NHS Azure UK South / UK West). No data transits outside UK.</td></tr><tr><td>Compliance</td><td>DTAC assessment complete before any trust data onboarded. UK GDPR Article 9. DPIA signed by trust IG team.</td></tr><tr><td>Availability</td><td>99.5% uptime on a rolling 90-day basis. Planned maintenance outside 06:00–22:00 Mon–Fri.</td></tr><tr><td>AI accuracy</td><td>Theme classification ≥91% overall, ≥88% per theme. No comment suppressed — low-confidence flagged, not discarded.</td></tr><tr><td>Accessibility</td><td>WCAG 2.1 AA. Colour is never the sole means of conveying alert status.</td></tr></table></div></div></div>
+
+<div id="m-a8" class="modal-overlay" onclick="overlayClose(event,'m-a8')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a8')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-rose-600 text-white px-2.5 py-0.5 rounded-full">Research</span><h3 class="serif text-lg font-semibold text-white mt-1">Discovery Research Plan — MVP Demo</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Stage 1 — User Interviews (1 Round)</h2><p><strong>Who:</strong> 6–9 participants — 2–3 Chief Nurses, 2–3 Quality Managers, 2–3 Ward Managers across 2–3 NHS trusts.</p><p><strong>Purpose:</strong> Validate core pain points, understand current feedback workflows, and pressure-test the MVP feature set against real daily needs.</p><ul><li>Semi-structured interview guide — 45 minutes per session</li><li>Chief Nurse focus: board accountability, CQC anxiety, 10YHP income exposure</li><li>Quality Manager focus: current manual process, sampling rates, what a useful alert looks like</li><li>Ward Manager focus: digest format, time constraints, positive feedback appetite</li><li>Synthesise into 5–7 key insight themes within 48 hours of final interview</li></ul><h2>Stage 2 — Feedback Analysis</h2><ul><li>Affinity map all interview observations into clusters</li><li>Cross-reference insight themes against MVP feature list — confirm each feature has a user need behind it</li><li>Identify any MVP features that lack evidence — flag for de-scoping or deferral</li><li>Validate alert threshold logic against real user mental models of "urgent" vs "monitor"</li><li>Produce a one-page MVP scope confirmation document as a shared team reference</li></ul><h2>Stage 3 — Tech Discovery</h2><ul><li>NHS data ingest: FFT CSV/API, NHS App ratings — format audit across 2 trusts</li><li>AI/NLP model selection: evaluate options for theme classification on NHS free-text (accuracy vs cost vs latency)</li><li>Run a classification spike on 300–500 real FFT comments; validate against expert-coded ground truth</li><li>Data residency and IG requirements: confirm UK cloud hosting approach and DTAC timeline</li><li>Build vs buy assessment for key MVP components (alerting engine, digest delivery)</li></ul><h2>Stage 4 — Ideation &amp; Hypothesis Creation</h2><ul><li>Run a focused HMW session using interview insights as prompts</li><li>Map jobs-to-be-done for each primary persona against MVP feature candidates</li><li>Generate hypothesis backlog: "We believe [feature] will [outcome] for [persona]. We'll know this is true when [signal]."</li><li>Score hypotheses against MVP goals using impact × confidence</li><li>Select top 3–5 hypotheses to carry into prototype design</li></ul><h2>Stage 5 — Design Prototypes</h2><ul><li>Wireframe the alert dashboard (Quality Manager primary view) — top-3 deteriorating wards default</li><li>Wireframe the drilldown flow: alert → theme → verbatim comments</li><li>Wireframe the weekly ward digest email format</li><li>Build mid-fidelity interactive prototype of the dashboard in Figma</li><li>Run 2–3 informal walkthroughs with Quality Managers to gather directional feedback</li><li>Iterate once based on feedback; lock prototype for sprint planning reference</li></ul></div></div></div>
+
+<div id="m-a9" class="modal-overlay" onclick="overlayClose(event,'m-a9')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a9')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-amber-600 text-white px-2.5 py-0.5 rounded-full">Findings</span><h3 class="serif text-lg font-semibold text-white mt-1">Discovery Findings Report — All 4 Gates</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Verdict: BUILD — with 4 targeted pivots</h2><p>All four decision gates pass. The problem is real, well-evidenced, and currently unsolved at scale. The 10YHP has materially increased urgency. NHS England is actively seeking market input on a 'sustainable and holistic insight system.' The technical spike confirms AI classification is achievable. One IG pivot required (on-premise option). Proceed to sprint planning with revised assumptions.</p><h2>Top 5 Findings That Change What We Build</h2><p><strong>F1 — IG gate passes, conditionally.</strong> 3 of 4 IG leads would approve a cloud processor, but only with UK data residency and DPIA completed before any patient data is transferred. One trust requires an on-premise processing option as a hard condition.</p><p><strong>F2 — AI accuracy reaches 89% out-of-the-box.</strong> Sentiment accuracy is strong (94%). Theme accuracy drags to 86% on dignity/respect and multi-theme comments. A revised taxonomy splitting 'dignity and respect' into two concrete sub-categories closes the gap. Estimated: 2 days of engineering.</p><p><strong>F3 — Alert fatigue is the #1 risk — from too many true positives, not false ones.</strong> Quality Managers didn't reject false positives; they rejected too many true positives. Only the top-3 deteriorating wards should appear in red by default.</p><p><strong>F4 — Ward managers will not log in — ever.</strong> All four ward managers confirmed this unprompted. The email digest is the only viable touchpoint. It must always contain at least one positive comment.</p><p><strong>F5 — The real near-term driver is compliance, not payment linkage.</strong> The Medium Term Planning Framework already mandates near-real-time feedback. Lead with compliance in sales conversations.</p><h2>Gate Verdicts</h2><table><tr><th>Gate</th><th>Verdict</th><th>Evidence &amp; Conditions</th></tr><tr><td>IG / CISO Gate</td><td>✓ PASS</td><td>3/4 IG leads approve with conditions: UK residency, ISO 27001, Cyber Essentials Plus, DPIA. 1 trust requires on-premise — add as Year 2 option.</td></tr><tr><td>AI Accuracy Gate</td><td>✓ PASS (conditional)</td><td>89% overall vs 85% gate criterion. Passes gate. 92% PRD target needs taxonomy change (2-day task).</td></tr><tr><td>Alert Design Gate</td><td>✓ PASS</td><td>3/3 QMs tested said they would act on a red alert — but only on the top-3 design. All-wards design failed unanimously.</td></tr><tr><td>Commercial Gate</td><td>✓ PASS</td><td>1 LOI signed at £45k (North West acute trust). 2 trusts at commercial terms stage. Pipeline projects £200k ARR by Year 1 end.</td></tr></table><h2>PRD Pivots Before Sprint 1</h2><p><strong>Pivot 1 — Alert UX:</strong> Default alert dashboard shows top-3 deteriorating wards only. All wards accessible via 'show all' toggle. Alert fatigue confirmed as primary adoption risk.</p><p><strong>Pivot 2 — Ward Manager interface:</strong> Ward-facing web app deprioritised from MVP to Next phase. Email digest elevated to P0. Add 'share with team' one-tap link. Magic link expiry: 7 days.</p><p><strong>Pivot 3 — AI taxonomy:</strong> Split 'dignity and respect' into: 'Privacy and dignity' and 'Feeling dismissed or not listened to.' Revise accuracy target to ≥91% overall.</p><p><strong>Pivot 4 — Architecture:</strong> Add on-premise deployment option to architecture design (Year 2 delivery, architecture decision now). Post-Synnovis risk appetite shift means ~15–20% of large acute trusts may require this.</p><h2>Immediate Actions Before Sprint 1</h2><ol><li>Rewrite US-01 and US-03 in the PRD to reflect top-3 alert default and email-primary ward manager interface.</li><li>Begin DTAC and DPIA process for pilot trust immediately. Target: DPIA first draft to trust IG team within 3 weeks.</li><li>Apply taxonomy change and re-run classification on 500-comment validation set. Confirm ≥91% before production code is written.</li><li>Schedule ward naming mapping workshop with pilot trust Quality Manager before sprint planning.</li><li>Begin G-Cloud application process. Takes 4–8 weeks — start now, not after first contract closes.</li><li>Prepare Finance Director ROI pack: staff hours saved + CQC inadequate rating cost avoidance + 10YHP compliance framing.</li></ol></div></div></div>
+
+<div id="m-a10" class="modal-overlay" onclick="overlayClose(event,'m-a10')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a10')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-indigo-600 text-white px-2.5 py-0.5 rounded-full">Interviews</span><h3 class="serif text-lg font-semibold text-white mt-1">User Interview Scripts — Round 1</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>About These Interviews</h2><p>These scripts were used in Round 1 of user discovery — five structured but conversational questions per persona. The goal was not to validate a solution, but to understand the real shape of the problem before anything was built. Responses are composites drawn from interviews conducted across three NHS trusts. All names are illustrative.</p><p><em>Interviewer tone throughout: curious, unhurried, non-leading. We are here to listen, not to pitch.</em></p><hr/><h2>Interview 1 — Sarah, Chief Nurse / Director of Patient Experience</h2><p><strong>Context:</strong> Sarah leads patient experience strategy for a large acute trust with 38 wards and approximately 600,000 patient contacts per year. She reports directly to the CEO and presents to the board quarterly.</p><h3>Q1 · How do you currently find out when something is going wrong with patient experience on a particular ward?</h3><blockquote>"Honestly? In the worst cases, from the local paper. Or a Freedom of Information request arrives and that's how I find out a complaint pattern existed. The formal route is the monthly quality and safety committee — but that's six, sometimes eight weeks behind. By then you're managing an aftermath, not a situation."</blockquote><p><strong>What this validates:</strong> The feedback lag is real and the consequence of missing it is reputational, not just operational.</p><h3>Q2 · When you do receive patient feedback data, what does it look like and what do you do with it?</h3><blockquote>"We get a quarterly summary from the quality team — usually a PowerPoint, maybe 12 slides. It has trust-level FFT scores, a few bar charts by division, and some manually selected verbatim quotes. It takes them about two days to put together."</blockquote><p><strong>What this validates:</strong> The board pack is manual, slow, and sampled.</p><h3>Q3 · The 10 Year Health Plan ties trust income to patient ratings. Has that changed how your board talks about patient experience?</h3><blockquote>"The payment linkage has made the finance director much more interested in patient experience data than they used to be. Which is actually useful. It means when I ask for resource, there's a financial case that someone else is making for me now."</blockquote><p><strong>What this validates:</strong> Compliance and CQC risk are the primary switch triggers. Lead with compliance in the demo narrative.</p><h3>Q4 · If you received an alert that a ward's patient sentiment had dropped significantly — what would you need to see to actually act on it?</h3><blockquote>"I'd need to know which ward, obviously. But I'd also need to know why — not just 'sentiment is down 12 points.' If it just says 'worse,' I'll pass it to the quality team and wait. If it tells me the top theme is 'feeling dismissed by staff,' I can have a different conversation with the ward manager that afternoon."</blockquote><p><strong>What this validates:</strong> Alerts need the driving theme to be actionable. A score change alone is insufficient.</p><h3>Q5 · What would make you feel confident that a patient feedback platform was actually working?</h3><blockquote>"If I walked into a board meeting and the chair asked about patient experience on a particular ward — and I already knew the answer before they finished the question. That would tell me something had fundamentally changed. Right now, that never happens. I'm always in reactive mode."</blockquote><p><strong>What this validates:</strong> The primary success metric is proactive awareness — knowing before being asked.</p><hr/><h2>Interview 2 — James, Quality Manager / Patient Experience Lead</h2><p><strong>Context:</strong> James has worked in patient experience quality roles for nine years. He manages a team of two and is responsible for FFT analysis, complaints coordination, and CQC inspection evidence.</p><h3>Q1 · Walk us through what your quarterly feedback cycle actually looks like.</h3><blockquote>"So we export the FFT responses from the NHS portal — usually around 2,000 comments per quarter. I open them in Excel. I read each one and manually assign it to a theme category. Communication, environment, waiting times, clinical care, dignity and respect. That takes me about two days."</blockquote><p><strong>What this validates:</strong> The manual coding process is exactly as painful as assumed. Two days per quarter on a task AI can do in seconds.</p><h3>Q2 · Are you reading all of the comments, or is there some selection happening?</h3><blockquote>"I try to read all of them but honestly — if we've had a particularly busy quarter — I'll do a proper read of maybe 60–70% and skim the rest. There have been times I've spotted something in month three that was clearly visible in month one if I'd had time to look."</blockquote><p><strong>What this validates:</strong> Sampling is a coping mechanism. Processing 100% of comments directly addresses a known gap James is already uncomfortable with.</p><h3>Q3 · When you look at a dashboard showing ward-level feedback — what makes it useful versus overwhelming?</h3><blockquote>"The tools I've used before show every ward. There might be 30 wards all with slightly different scores and I'm supposed to figure out which one needs my attention. It becomes noise. What I actually want is someone to say — 'these three wards have moved the most in the wrong direction in the last four weeks.' Just those three. I can deal with three."</blockquote><p><strong>What this validates:</strong> The top-3 deteriorating wards default is a direct articulation of what James needs. This is discovery finding F3 confirmed verbatim.</p><h3>Q4 · When you identify a theme — say 'communication' is flagging — what do you need to do next?</h3><blockquote>"I need to show the ward manager something real. Not just 'communication is down.' I need to be able to say 'three patients this week said they were not told what their medication was for.' So I end up going back into the raw data and manually pulling out representative quotes. That takes another hour per ward."</blockquote><p><strong>What this validates:</strong> The drilldown to verbatim comments is a prerequisite, not a feature. Alert → theme → verbatim in 3 clicks closes a loop that currently takes an hour per ward.</p><h3>Q5 · CQC inspections — how much of your time goes into preparing patient experience evidence?</h3><blockquote>"Last inspection, I spent three weeks pulling together evidence. If I could generate that pack in an afternoon I'd cry with relief. Genuinely."</blockquote><p><strong>What this validates:</strong> CQC evidence preparation is a significant pain point and strong commercial hook.</p><hr/><h2>Interview 3 — Priya, Ward Manager / Service Line Lead</h2><p><strong>Context:</strong> Priya manages a 28-bed surgical ward and has been in her role for four years. She works four long shifts per week. She was direct, practical, and refreshingly honest about what she will and will not do.</p><h3>Q1 · How do you currently receive patient feedback about your ward?</h3><blockquote>"I get a quarterly email from the quality team with a PDF attached. It has a percentage — like '84% of patients rated their experience as very good or good.' It arrives about six weeks after the end of the quarter. If something went wrong in January, it went wrong. There's nothing I can do about it now."</blockquote><p><strong>What this validates:</strong> The feedback lag is confirmed. Aggregated percentage scores are meaningless at ward level.</p><h3>Q2 · Have you ever tried logging into a trust system to look at patient feedback yourself?</h3><blockquote>"Once. About two years ago. I couldn't remember my login, IT took three days to reset it, by which point I'd given up. I have 22 staff, bed management calls every morning, and a ward round at eight. I am not going to log into anything that isn't the EPR or the rota system. If something needs a login, it doesn't exist for me."</blockquote><p><strong>What this validates:</strong> The no-login constraint is absolute, not a preference. A magic-link email is the only viable delivery mechanism. This is discovery finding F4 confirmed directly.</p><h3>Q3 · If you received a short Monday morning email about your ward's feedback — what would you need to see in it?</h3><blockquote>"Tell me what patients said. Not a score — what they actually said. The top two things that were good, the top two things that need fixing. And I want at least one actual quote — a real sentence a patient wrote. My team never get to hear the good stuff. If I could read out one positive comment at the Monday huddle, that would change the whole tone of the week."</blockquote><p><strong>What this validates:</strong> The digest format — top 2 positives, top 2 concerns, minimum 1 verbatim — is exactly right. The positive verbatim is structural, not optional.</p><h3>Q4 · Would you share that kind of email with your team?</h3><blockquote>"Yes, immediately. I'd forward it to the ward WhatsApp. But only if it was short — one screen, done. And it needs to have something positive in it or I'm not putting it in front of my team. I'm not going to depress people on a Monday morning."</blockquote><p><strong>What this validates:</strong> The one-tap share link is confirmed as a real behaviour. The digest must be single-screen length.</p><h3>Q5 · If a complaint landed tomorrow that could have been caught earlier — what would that feel like?</h3><blockquote>"It's happened. A patient raised a formal complaint about how a discharge was handled. When the quality team looked back, there were three comments about discharge confusion on my ward in the two months before. Nobody flagged it. Nobody told me. If I'd known, I would have changed how we brief patients. That's on me — but only because I didn't have the information. That's the part that stays with you."</blockquote><p><strong>What this validates:</strong> The emotional stakes of missing feedback are real and personal. This quote is the emotional anchor for the Ward Manager story in the demo.</p></div></div></div>
+
+<div id="m-a11" class="modal-overlay" onclick="overlayClose(event,'m-a11')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a11')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-slate-700 text-white px-2.5 py-0.5 rounded-full">Technical</span><h3 class="serif text-lg font-semibold text-white mt-1">Technical Discovery Report</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Purpose of This Report</h2><p>This technical discovery report documents the engineering findings, constraints, and architectural decisions identified during the MVP discovery phase. It is scoped strictly to what is needed to build and demonstrate the MVP — AI theme classification, sentiment alerting, ward digest email, and board pack export.</p><h2>1. MVP Technical Scope</h2><table><tr><th>Capability</th><th>In MVP</th><th>Deferred</th></tr><tr><td>NHS FFT data ingest (CSV upload)</td><td>✓</td><td></td></tr><tr><td>NHS App ratings ingest (API)</td><td>✓</td><td></td></tr><tr><td>AI theme classification on free-text</td><td>✓</td><td></td></tr><tr><td>Sentiment scoring per comment</td><td>✓</td><td></td></tr><tr><td>Top-3 deteriorating wards alert dashboard</td><td>✓</td><td></td></tr><tr><td>Drilldown: alert → theme → verbatim</td><td>✓</td><td></td></tr><tr><td>Weekly ward digest email (magic link)</td><td>✓</td><td></td></tr><tr><td>Board pack PDF export</td><td>✓</td><td></td></tr><tr><td>Role-based access (QM + Chief Nurse)</td><td>✓</td><td></td></tr><tr><td>PALS / Datix / complaints integrations</td><td></td><td>Next phase</td></tr><tr><td>Real-time streaming ingest</td><td></td><td>Next phase</td></tr><tr><td>On-premise deployment option</td><td></td><td>Year 2</td></tr><tr><td>ICB cross-trust aggregation</td><td></td><td>Year 2</td></tr></table><h2>2. Technical Requirements</h2><h3>Data Ingest</h3><ul><li><strong>FFT CSV:</strong> Accept NHS England FFT export format (Excel + CSV). Column mapping must handle trust naming variations and ward code inconsistencies. A normalisation layer is required before classification.</li><li><strong>NHS App API:</strong> Authenticate via NHS Identity / OAuth 2.0. Rate limits apply — ingest should be batched, not streamed. API schema versioning must be tracked.</li><li><strong>Deduplication:</strong> Composite key dedup (trustCode + wardCode + responseDate + overallExperience + comment hash) applied at ingest.</li></ul><h3>AI Classification</h3><ul><li><strong>Model:</strong> Fine-tuned transformer (BERT-base or ClinicalBERT) on NHS FFT taxonomy. Out-of-the-box accuracy: 89%. Post-taxonomy-fix target: ≥91% overall, ≥88% per theme.</li><li><strong>Taxonomy:</strong> 6 themes — Communication, Environment &amp; Facilities, Waiting &amp; Delays, Clinical Care &amp; Treatment, Staffing &amp; Attitudes, Privacy &amp; Dignity (split from original Dignity &amp; Respect per discovery finding F2).</li><li><strong>Confidence threshold:</strong> Comments below 0.65 confidence are flagged as "unclassified" and surfaced for manual review — never silently discarded.</li></ul><h3>Alerting Engine</h3><ul><li>Rolling 4-week sentiment window per ward. Alert triggers when week-on-week change exceeds configurable threshold (default: −8 points).</li><li>Top-3 wards by deterioration magnitude surfaced by default. All wards accessible via toggle.</li><li>Alert pipeline runs nightly. Near-real-time alerting is post-MVP.</li></ul><h3>Email Digest</h3><ul><li>Sent Monday 08:00 GMT via transactional email provider (SendGrid or AWS SES).</li><li>Magic link authentication — JWT signed, 7-day expiry, ward-scoped. No password or account required.</li><li>Template must render correctly in Outlook — the dominant NHS email client. Plain text fallback required.</li></ul><h3>Board Pack Export</h3><ul><li>PDF generated server-side (Puppeteer or WeasyPrint). Client-side PDF is unreliable across NHS network proxies.</li><li>Contents: trust-wide sentiment trend (12 weeks), top 3 risk alerts, theme breakdown, week-on-week direction indicator.</li></ul><h2>3. NHS Infrastructure Constraints</h2><h3>Network and Connectivity</h3><ul><li><strong>NHS network proxies:</strong> Many trust networks route outbound HTTPS through Zscaler or similar. Design for proxy-hostile environments — avoid WebSockets for critical paths; use polling with exponential backoff.</li><li><strong>Bandwidth:</strong> Some ward terminals operate on constrained bandwidth. The dashboard must load in &lt;3s on a 10Mbps connection.</li></ul><h3>Device and Browser Environment</h3><ul><li>Target: Chrome 90+, Edge 90+. IE11 is explicitly out of scope.</li><li>Ward terminals are often shared, locked-down devices. No local storage of patient data. Session tokens must be server-side only.</li><li>Email digest must render in Outlook 2016/2019 desktop. Use table-based layouts.</li></ul><h3>Data Residency and IG</h3><ul><li>All patient data must be processed and stored within UK (Azure UK South primary, UK West failover). No data transits outside UK.</li><li>DTAC assessment is a prerequisite to any trust signing a data processing agreement.</li><li>DPIA must be completed and signed by trust IG before any patient data is transferred.</li></ul><h2>4. Technical Limitations Identified in Discovery</h2><table><tr><th>Limitation</th><th>Impact</th><th>Mitigation</th></tr><tr><td>NHS ward naming is not standardised across trusts</td><td>Matching feedback to organisational structure requires per-trust mapping</td><td>Ward mapping workshop with each trust at onboarding</td></tr><tr><td>FFT data arrives in batches not in real-time</td><td>Dashboard reflects historic data, not live ward state</td><td>Clearly communicate data freshness in UI; real-time ingest is post-MVP</td></tr><tr><td>AI accuracy drops on dignity/respect and multi-theme comments</td><td>Theme breakdown is less reliable for nuanced comments</td><td>Taxonomy split closes gap to 91%+. Low-confidence comments flagged explicitly.</td></tr><tr><td>One trust requires on-premise processing (post-Synnovis risk)</td><td>Cloud-only MVP excludes this trust</td><td>Architecture decision recorded: design for on-premise as a Year 2 option. Containerise processing layer now.</td></tr></table><h2>5. Proposed MVP Architecture</h2><ul><li><strong>Frontend:</strong> React SPA (Vite). Hosted on Vercel or Azure Static Web Apps.</li><li><strong>API layer:</strong> Node.js / FastAPI. Deployed as containerised services (Docker) on Azure Container Apps.</li><li><strong>AI classification service:</strong> Python microservice wrapping the fine-tuned transformer. Isolated so the model can be swapped without touching the rest of the stack.</li><li><strong>Database:</strong> PostgreSQL (Azure). Row-level security for trust data isolation.</li><li><strong>Queue:</strong> Azure Service Bus. Decouples ingest from classification — large batch uploads enqueue records rather than blocking the API.</li><li><strong>Email:</strong> SendGrid or AWS SES. Templates stored as versioned HTML with plain text alternatives.</li><li><strong>PDF export:</strong> Puppeteer running in a headless container, triggered server-side on export request.</li></ul><h2>6. Reusable Components</h2><table><tr><th>Component</th><th>Reused In</th><th>Description</th></tr><tr><td>AlertCard</td><td>Dashboard, Chief Nurse view</td><td>Renders a deteriorating ward with threshold, trend direction, and top theme.</td></tr><tr><td>ThemeBar</td><td>Alert drilldown, Board pack</td><td>Horizontal bar showing theme name, comment count, and sentiment direction.</td></tr><tr><td>VerbatimList</td><td>Drilldown, Digest preview</td><td>Scrollable list of anonymised patient verbatim comments with optional sentiment tag.</td></tr><tr><td>TrendSparkline</td><td>Dashboard, Board pack, Ward digest</td><td>Lightweight 12-week sentiment trend line. Renders in email as a static PNG fallback.</td></tr><tr><td>DataFreshnessTag</td><td>Dashboard, Digest</td><td>Always-visible indicator of when data was last ingested.</td></tr></table></div></div></div>
+
+<div id="m-a12" class="modal-overlay" onclick="overlayClose(event,'m-a12')"><div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-3xl" style="max-height:90vh;display:flex;flex-direction:column;overflow:hidden"><div class="relative flex-shrink-0" style="height:10rem"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop" class="w-full h-full object-cover" alt=""/><div class="absolute inset-0" style="background:linear-gradient(to top,rgba(15,23,42,.7),transparent)"></div><button onclick="closeModal('m-a12')" style="position:absolute;top:.75rem;right:.75rem;width:2rem;height:2rem;border-radius:50%;background:rgba(255,255,255,.2);backdrop-filter:blur(4px);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button><div class="absolute bottom-3 left-5"><span class="mono text-[9px] font-semibold uppercase tracking-widest bg-green-700 text-white px-2.5 py-0.5 rounded-full">Business</span><h3 class="serif text-lg font-semibold text-white mt-1">Business Strategy Analysis</h3></div></div><div class="overflow-y-auto flex-1 p-6 prose"><h2>Core Value Proposition</h2><p>Converts a previously unanalysable data asset (free-text patient feedback) into financial and reputational protection. The value is <strong>existential, not incremental</strong> — trusts face income exposure and compliance failure without it.</p><h2>Why Now</h2><ul><li>The 10YHP creates direct financial consequences for poor feedback performance — for the first time in NHS history</li><li>The MTPF mandates near-real-time ward feedback monitoring from October 2025 — compliance is not optional</li><li>NHS App has 10× the data volume of legacy FFT — the data asset exists; the intelligence layer does not</li><li>NHS England is actively seeking market input on a 'sustainable and holistic insight system' — political tailwind</li></ul><h2>Business Model</h2><table><tr><th>Element</th><th>Detail</th></tr><tr><td>Model</td><td>Annual SaaS subscription per trust. Per-ward pricing tiers for smaller trusts.</td></tr><tr><td>Entry price</td><td>£30–45k per annum for a mid-size acute trust (validated in discovery pricing interviews)</td></tr><tr><td>Procurement route</td><td>G-Cloud direct award (target Q3). Crown Commercial Service framework as fallback.</td></tr><tr><td>Budget holder</td><td>Chief Nurse or Director of Quality (quality/safety budget, not IT budget — validated in discovery)</td></tr><tr><td>Year 1 target</td><td>£500k ARR. Year 2: £2M ARR. Requires 11–16 live trusts at average £45k.</td></tr></table><h2>Go-to-Market Sequencing</h2><ol><li><strong>Land:</strong> 2 pilot trusts on paid contracts before public launch. Use as reference sites and case study authors.</li><li><strong>Expand:</strong> G-Cloud listing enables direct award without tender. Target trusts with CQC Well-Led reviews scheduled in next 12 months.</li><li><strong>Leverage:</strong> ICB relationships open system-level conversations — one ICB = up to 10 trust conversations.</li></ol><h2>ROI Frame for Trust Finance Directors</h2><ul><li><strong>Staff time saved:</strong> Quality Manager coding time: 2–3 days/quarter → 2 hours. At band 7 salary: ~£15k/year saved.</li><li><strong>CQC risk:</strong> A single 'Inadequate' rating on Well-Led costs £200k+ in remediation and reputational damage. One prevented inadequate rating pays for 4 years of platform cost.</li><li><strong>10YHP compliance:</strong> Non-compliance with near-real-time feedback mandate = regulatory exposure from Q1 2026.</li></ul><h2>Competitive Positioning</h2><table><tr><th>Competitor</th><th>Our Advantage</th></tr><tr><td>Qualtrics</td><td>Generic; no NHS context, no FFT/PALS ingest, no early-warning logic</td></tr><tr><td>Civica / Meridio</td><td>Data capture only; no analytical layer. Potential integration partner.</td></tr><tr><td>Cemplicity</td><td>Reporting-focused, not intelligence-focused. No anomaly alerting.</td></tr><tr><td>In-house Power BI</td><td>Manual, slow, sampled. 10YHP makes this untenable.</td></tr><tr><td><strong>Patient Feedback Intelligence</strong></td><td>Only product combining all four: ingest, understand, alert, act.</td></tr></table></div></div></div>
+
+<script>
+  function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden'}
+  function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';var f=document.getElementById('flip-'+id.split('-').slice(1).join('-'));if(f)f.classList.remove('flipped')}
+  function overlayClose(e,id){if(e.target===document.getElementById(id))closeModal(id)}
+  function flip(flipId,toBack){var el=document.getElementById(flipId);if(el){if(toBack)el.classList.add('flipped');else el.classList.remove('flipped')}}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.open').forEach(function(m){m.classList.remove('open');document.body.style.overflow=''});document.querySelectorAll('.flip-wrap').forEach(function(f){f.classList.remove('flipped')})}})
+</script>
+</body>
+</html>
